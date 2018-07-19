@@ -35,7 +35,7 @@ using intelliPWR.Struct;
 
 namespace intelliPWR
 {
-    public class Serializer
+    public static class Serializer
     {
         #region Decoded and Encoded Data
 
