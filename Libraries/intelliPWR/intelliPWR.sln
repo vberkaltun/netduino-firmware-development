@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "intelliPWR", "intelliPWR\intelliPWR.csproj", "{282AC783-6898-4045-9C9A-8D97FF9E28EE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MasterScanner", "MasterScanner\MasterScanner.csproj", "{23ACD760-889B-4304-B2B3-66F40A31B3BD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serializer", "Serializer\Serializer.csproj", "{282AC783-6898-4045-9C9A-8D97FF9E28EE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,6 +13,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{23ACD760-889B-4304-B2B3-66F40A31B3BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{23ACD760-889B-4304-B2B3-66F40A31B3BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{23ACD760-889B-4304-B2B3-66F40A31B3BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{23ACD760-889B-4304-B2B3-66F40A31B3BD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{282AC783-6898-4045-9C9A-8D97FF9E28EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{282AC783-6898-4045-9C9A-8D97FF9E28EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{282AC783-6898-4045-9C9A-8D97FF9E28EE}.Release|Any CPU.ActiveCfg = Release|Any CPU

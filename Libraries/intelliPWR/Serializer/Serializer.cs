@@ -32,7 +32,7 @@ using System;
 using intelliPWR.Interface;
 using intelliPWR.Struct;
 
-namespace intelliPWR
+namespace intelliPWR.Serializer
 {
     public static class Serializer
     {
