@@ -29,7 +29,6 @@
  */
 
 using System;
-using intelliPWR;
 using intelliPWR.Interface;
 using intelliPWR.Struct;
 
