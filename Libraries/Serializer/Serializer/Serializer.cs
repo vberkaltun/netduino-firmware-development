@@ -34,18 +34,18 @@ using System;
 
 namespace Serializer
 {
-    public class Serializer : IOperations
+    public static class Serializer
     {
         #region Decoded and Encoded Data
 
-        DecodedData DecodedList = new DecodedData();
-        EncodedData EncodedList = new EncodedData();
+        static DecodedData DecodedList = new DecodedData();
+        static EncodedData EncodedList = new EncodedData();
 
         #endregion
 
         #region Public Operations
 
-        public string[] Decode(string data, char[] delimiter)
+        public static string[] Decode(string data, char[] delimiter)
         {
             // Clear last stored data
             ClearDecodedList(true);
@@ -79,7 +79,7 @@ namespace Serializer
             return (decodeDataFlag ? DecodedList.ResultData : null);
         }
 
-        public string Encode(string[] data, char[] Delimiter)
+        public static string Encode(string[] data, char[] Delimiter)
         {
             // Clear last stored data
             ClearEncodedList(true);
@@ -117,7 +117,7 @@ namespace Serializer
 
         #region Private Operations
 
-        private void ClearDecodedList(bool isAllData)
+        private static void ClearDecodedList(bool isAllData)
         {
             // IMPORTANT NOTICE: seems so confused, right? 
             // When you free up a pointer, you can not use it again anymore 
@@ -130,7 +130,7 @@ namespace Serializer
                 DecodedList.ResultData = null;
         }
 
-        private void ClearEncodedList(bool isAllData)
+        private static void ClearEncodedList(bool isAllData)
         {
             // IMPORTANT NOTICE: seems so confused, right? 
             // When you free up a pointer, you can not use it again anymore 
@@ -143,7 +143,7 @@ namespace Serializer
                 EncodedList.ResultData = null;
         }
 
-        private void FillDecodedList()
+        private static void FillDecodedList()
         {
             // Declare and store separated words based on delimiter
             string[] tempofResultData = DecodedList.GivenData.Split(DecodedList.Delimiter);
@@ -156,7 +156,7 @@ namespace Serializer
                 DecodedList.ResultData[index] = tempofResultData[index];
         }
 
-        private void FillEncodedList()
+        private static void FillEncodedList()
         {
             // Store the size of received data at the here
             int sizeofAbsolute = EncodedList.SizeofDelimiter - EncodedList.SizeofGivenData;
@@ -178,7 +178,7 @@ namespace Serializer
             }
         }
 
-        private bool DecodeData()
+        private static bool DecodeData()
         {
             // Declare an variable for storing done separator
             int checkedDelimiter = 0;
@@ -224,7 +224,7 @@ namespace Serializer
             return true;
         }
 
-        private bool EncodeData()
+        private static bool EncodeData()
         {
             // IMPORTANT NOTICE: The absolute value always must be 0 or zero
             // For example, If size of given data is bigger or smaller than 
