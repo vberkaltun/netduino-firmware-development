@@ -1,4 +1,4 @@
-/*
+﻿/*
  * SERIALIZER - 19.07.2018
  * 
  * =============================================================================
@@ -28,9 +28,9 @@
  * =============================================================================
  */
 
+using System;
 using Serializer.Interface;
 using Serializer.Struct;
-using System;
 
 namespace Serializer
 {
@@ -45,6 +45,15 @@ namespace Serializer
 
         #region Public Operations
 
+        /// <summary>
+        /// Decode a given data with delimiter list. The most important thing in
+        /// this step is the equation of data size and delimiter size.
+        /// If the size of both data's is not equal to �1 of each other, encoding
+        /// can not work very well. Output will be null in this situation.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="delimiter"></param>
+        /// <returns>A separated data.</returns>
         public static string[] Decode(string data, char[] delimiter)
         {
             // Clear last stored data
@@ -79,6 +88,15 @@ namespace Serializer
             return (decodeDataFlag ? DecodedList.ResultData : null);
         }
 
+        /// <summary>
+        /// Encode a given data with delimiter list. The most important thing in
+        /// this step is the equation of data size and delimiter size.
+        /// If the size of both data's is not equal to �1 of each other, encoding
+        /// can not work very well. Output will be null in this situation.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="Delimiter"></param>
+        /// <returns>A combined data.</returns>
         public static string Encode(string[] data, char[] Delimiter)
         {
             // Clear last stored data
@@ -226,12 +244,19 @@ namespace Serializer
 
         private static bool EncodeData()
         {
+            // Store difference of given data and delimiter data
+            int AbsoluteofDifference = EncodedList.SizeofGivenData - EncodedList.SizeofDelimiter;
+
+            // If calculated data is smaller than -1, calculate absolute value
+            if (AbsoluteofDifference < -1)
+                AbsoluteofDifference *= -1;
+
             // IMPORTANT NOTICE: The absolute value always must be 0 or zero
             // For example, If size of given data is bigger or smaller than 
             // the size of delimiters, we can not have enough delimiters for encoding
             // For this reason, When ABS(s) of delimiters and data is 0 or 1,
             // encoding can be performed very well
-            if (Math.Abs(EncodedList.SizeofGivenData - EncodedList.SizeofDelimiter) > 1)
+            if (AbsoluteofDifference > 1)
                 return false;
 
             // Check that whether given data includes a delimiters or not
