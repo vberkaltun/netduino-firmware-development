@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SERIALIZER - 19.07.2018
  * 
  * =============================================================================
@@ -29,31 +29,24 @@
  */
 
 using System;
-using Serializer.Interface;
-using Serializer.Struct;
+using intelliPWR;
+using intelliPWR.Interface;
+using intelliPWR.Struct;
 
-namespace Serializer
+namespace intelliPWR
 {
-    public static class Serializer
+    public class Serializer
     {
         #region Decoded and Encoded Data
 
-        static DecodedData DecodedList = new DecodedData();
-        static EncodedData EncodedList = new EncodedData();
+        private static DecodedData DecodedList = new DecodedData();
+
+        private static EncodedData EncodedList = new EncodedData();
 
         #endregion
 
         #region Public Operations
 
-        /// <summary>
-        /// Decode a given data with delimiter list. The most important thing in
-        /// this step is the equation of data size and delimiter size.
-        /// If the size of both data's is not equal to �1 of each other, encoding
-        /// can not work very well. Output will be null in this situation.
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="delimiter"></param>
-        /// <returns>A separated data.</returns>
         public static string[] Decode(string data, char[] delimiter)
         {
             // Clear last stored data
@@ -88,15 +81,6 @@ namespace Serializer
             return (decodeDataFlag ? DecodedList.ResultData : null);
         }
 
-        /// <summary>
-        /// Encode a given data with delimiter list. The most important thing in
-        /// this step is the equation of data size and delimiter size.
-        /// If the size of both data's is not equal to �1 of each other, encoding
-        /// can not work very well. Output will be null in this situation.
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="Delimiter"></param>
-        /// <returns>A combined data.</returns>
         public static string Encode(string[] data, char[] Delimiter)
         {
             // Clear last stored data

@@ -1,9 +1,9 @@
 using System;
-using Serializer.Interface;
+using intelliPWR.Interface;
 
-namespace Serializer.Struct
+namespace intelliPWR.Struct
 {
-    struct DecodedData : IDecodedData
+    struct EncodedData : IEncodedData
     {
         private char[] delimiter;
         public char[] Delimiter
@@ -19,8 +19,8 @@ namespace Serializer.Struct
             }
         }
 
-        private string givenData;
-        public string GivenData
+        private string[] givenData;
+        public string[] GivenData
         {
             get
             {
@@ -33,8 +33,8 @@ namespace Serializer.Struct
             }
         }
 
-        private string[] resultData;
-        public string[] ResultData
+        private string resultData;
+        public string ResultData
         {
             get
             {

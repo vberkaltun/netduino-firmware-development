@@ -1,15 +1,15 @@
-namespace Serializer.Interface
+namespace intelliPWR.Interface
 {
     /// <summary>
-    /// Encoded data's field.
+    /// Decoded data's field.
     /// </summary>
-    interface IEncodedData
+    interface IDecodedData
     {
         int SizeofDelimiter { get; set; }
         int SizeofGivenData { get; set; }
 
         char[] Delimiter { get; set; }
-        string[] GivenData { get; set; }
-        string ResultData { get; set; }
+        string GivenData { get; set; }
+        string[] ResultData { get; set; }
     }
 }
