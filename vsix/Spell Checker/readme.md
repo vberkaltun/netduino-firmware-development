@@ -8,19 +8,13 @@ The extension adds vertical column guides behind your code. This is useful if yo
 
 Control guidelines via the context (right-click) menu on the editor surface. You will see a *Guidelines* flyout with three commands:
 
-![GuidelinesContextMenu](images/ContextMenu.png)
-
 * When *Add Guideline* is selected, a vertical dashed line will be drawn at the same position as the caret (insertion point).
 * *Remove Guideline* will remove any guideline at the current insertion point.
 * *Remove All Guidelines* does exactly that.
 
 You can change the guideline color from the Fonts and Colors page in `Tools|Options`. Look for *Guideline* in the Text Editor category:
 
-![GuidelinesToolsOptions](images/FontsAndColors.png)
-
 These commands may also be accessed from Visual Studio's Command Window.
-
-![GuidelinesCommandWindow](images/CommandWindow.png)
 
 Note that the column numbers used for the `Edit.AddGuideline` and `Edit.RemoveGuideline` commands refer to the right side of the given column of text.
 i.e. To place a guide to the right of column 80, use `Edit.AddGuideline 80`. To place a guide to the left of the first column use `Edit.AddGuideline 0`.
