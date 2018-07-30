@@ -30,32 +30,84 @@
 
 namespace intelliPWR.MasterScanner
 {
-    public static class MasterScanner
+    public class MasterScanner : Function, IMasterScanner
     {
-        public static bool setRange(byte _startAddress, byte _stopAddress)
-        {
+        #region Constructor
 
-            return false;
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
+        public MasterScanner()
+        {
+            // Initialize for first run
+            Initialize();
         }
-        public static void resetRange() { }
 
-        public static void scanSlaves() { }
+        /// <summary>
+        /// Default constructor with start and stop parameters.
+        /// </summary>
+        /// <param name="startAddress">The start address of I2C scanner bus.</param>
+        /// <param name="stopAddress">The stop address of I2C scanner bus.</param>
+        public MasterScanner(byte startAddress, byte stopAddress)
+        {
+            StartAddress = startAddress;
+            StopAddress = stopAddress;
 
-        public static byte getStartAddress()
-        {
-            return 0;
+            // Initialize for first run
+            Initialize();
         }
-        public static byte getStopAddress()
+
+        /// <summary>
+        /// Default constructor with clockSpeed and timeout parameters.
+        /// </summary>
+        /// <param name="clockSpeed">The clock speed of master scanner lib.</param>
+        /// <param name="timeout">Time delay after an one clock hertz.</param>
+        public MasterScanner(ushort clockSpeed, ushort timeout)
         {
-            return 0;
+            ClockSpeed = clockSpeed;
+            Timeout = timeout;
+
+            // Initialize for first run
+            Initialize();
         }
-        public static byte getConnectedSlavesCount()
+
+        /// <summary>
+        /// Default constructor with clockSpeed, timeout and retryCount parameters.
+        /// </summary>
+        /// <param name="clockSpeed">The clock speed of master scanner lib.</param>
+        /// <param name="timeout">Time delay after an one clock hertz.</param>
+        /// <param name="retryCount">Retry count for worst case operations.</param>
+        public MasterScanner(ushort clockSpeed, ushort timeout, ushort retryCount)
         {
-            return 0;
+            ClockSpeed = clockSpeed;
+            Timeout = timeout;
+            RetryCount = retryCount;
+
+            // Initialize for first run
+            Initialize();
         }
-        public static bool isConnected(byte _address)
+
+        /// <summary>
+        /// Default constructor with startAddress, stopAddress, clockSpeed, timeout and retryCount parameters.
+        /// </summary>
+        /// <param name="startAddress">The start address of I2C scanner bus.</param>
+        /// <param name="stopAddress">The stop address of I2C scanner bus.</param>
+        /// <param name="clockSpeed">The clock speed of master scanner lib.</param>
+        /// <param name="timeout">Time delay after an one clock hertz.</param>
+        /// <param name="retryCount">Retry count for worst case operations.</param>
+        public MasterScanner(byte startAddress, byte stopAddress, ushort clockSpeed, ushort timeout, ushort retryCount)
         {
-            return false;
+            StartAddress = startAddress;
+            StopAddress = stopAddress;
+
+            ClockSpeed = clockSpeed;
+            Timeout = timeout;
+            RetryCount = retryCount;
+
+            // Initialize for first run
+            Initialize();
         }
+
+        #endregion
     }
 }
