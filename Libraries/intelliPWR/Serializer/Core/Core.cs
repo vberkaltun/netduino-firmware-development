@@ -4,6 +4,13 @@ namespace intelliPWR.Serializer
 {
     public class Core
     {
+        #region Variable
+
+        protected SDecoded Decoded = new SDecoded();
+        protected SEncoded Encoded = new SEncoded();
+
+        #endregion
+
         #region Encapsulation
 
         private bool startWithDelimiter;
@@ -169,13 +176,6 @@ namespace intelliPWR.Serializer
                 }
             }
         }
-
-        #endregion
-
-        #region Variable
-
-        protected SDecoded Decoded = new SDecoded();
-        protected SEncoded Encoded = new SEncoded();
 
         #endregion
     };
