@@ -1,11 +1,13 @@
+using System;
+
 namespace intelliPWR.Serializer
 {
-    public class Core : IDecoded, IEncoded
+    public class Core
     {
         #region Encapsulation
 
         private bool startWithDelimiter;
-        public bool StartWithDelimiter
+        protected bool StartWithDelimiter
         {
             get
             {
@@ -18,149 +20,162 @@ namespace intelliPWR.Serializer
             }
         }
 
-        // -----
+        #endregion
 
-        private char[] decodedDelimiter;
-        public char[] DecodedDelimiter
+        #region Structure
+
+        protected struct SDecoded : IDecoded
         {
-            get
+            private char[] delimiter;
+            public char[] Delimiter
             {
-                return decodedDelimiter;
+                get
+                {
+                    return delimiter;
+                }
+
+                set
+                {
+                    delimiter = value;
+                }
             }
 
-            set
+            private string data;
+            public string Data
             {
-                decodedDelimiter = value;
+                get
+                {
+                    return data;
+                }
+
+                set
+                {
+                    data = value;
+                }
+            }
+
+            private string[] result;
+            public string[] Result
+            {
+                get
+                {
+                    return result;
+                }
+
+                set
+                {
+                    result = value;
+                }
+            }
+
+            private int sizeofDelimiter;
+            public int SizeofDelimiter
+            {
+                get
+                {
+                    return sizeofDelimiter;
+                }
+
+                set
+                {
+                    sizeofDelimiter = value;
+                }
+            }
+
+            private int sizeofData;
+            public int SizeofData
+            {
+                get
+                {
+                    return sizeofData;
+                }
+
+                set
+                {
+                    sizeofData = value;
+                }
             }
         }
 
-        private string decodedData;
-        public string DecodedData
+        protected struct SEncoded : IEncoded
         {
-            get
+            private char[] delimiter;
+            public char[] Delimiter
             {
-                return decodedData;
+                get
+                {
+                    return delimiter;
+                }
+
+                set
+                {
+                    delimiter = value;
+                }
             }
 
-            set
+            private string[] data;
+            public string[] Data
             {
-                decodedData = value;
+                get
+                {
+                    return data;
+                }
+
+                set
+                {
+                    data = value;
+                }
+            }
+
+            private string result;
+            public string Result
+            {
+                get
+                {
+                    return result;
+                }
+
+                set
+                {
+                    result = value;
+                }
+            }
+
+            private int sizeofDelimiter;
+            public int SizeofDelimiter
+            {
+                get
+                {
+                    return sizeofDelimiter;
+                }
+
+                set
+                {
+                    sizeofDelimiter = value;
+                }
+            }
+
+            private int sizeofData;
+            public int SizeofData
+            {
+                get
+                {
+                    return sizeofData;
+                }
+
+                set
+                {
+                    sizeofData = value;
+                }
             }
         }
 
-        private string[] decodedResult;
-        public string[] DecodedResult
-        {
-            get
-            {
-                return decodedResult;
-            }
+        #endregion
 
-            set
-            {
-                decodedResult = value;
-            }
-        }
+        #region Variable
 
-        private int sizeofDecodedDelimiter;
-        public int SizeofDecodedDelimiter
-        {
-            get
-            {
-                return sizeofDecodedDelimiter;
-            }
-
-            set
-            {
-                sizeofDecodedDelimiter = value;
-            }
-        }
-
-        private int sizeofDecodedData;
-        public int SizeofDecodedData
-        {
-            get
-            {
-                return sizeofDecodedData;
-            }
-
-            set
-            {
-                sizeofDecodedData = value;
-            }
-        }
-
-        // -----
-
-        private char[] encodedDelimiter;
-        public char[] EncodedDelimiter
-        {
-            get
-            {
-                return encodedDelimiter;
-            }
-
-            set
-            {
-                encodedDelimiter = value;
-            }
-        }
-
-        private string[] encodedData;
-        public string[] EncodedData
-        {
-            get
-            {
-                return encodedData;
-            }
-
-            set
-            {
-                encodedData = value;
-            }
-        }
-
-        private string encodedResult;
-        public string EncodedResult
-        {
-            get
-            {
-                return encodedResult;
-            }
-
-            set
-            {
-                encodedResult = value;
-            }
-        }
-
-        private int sizeofEncodedDelimiter;
-        public int SizeofEncodedDelimiter
-        {
-            get
-            {
-                return sizeofEncodedDelimiter;
-            }
-
-            set
-            {
-                sizeofEncodedDelimiter = value;
-            }
-        }
-
-        private int sizeofEncodedData;
-        public int SizeofEncodedData
-        {
-            get
-            {
-                return sizeofEncodedData;
-            }
-
-            set
-            {
-                sizeofEncodedData = value;
-            }
-        }
+        protected SDecoded Decoded = new SDecoded();
+        protected SEncoded Encoded = new SEncoded();
 
         #endregion
     };
