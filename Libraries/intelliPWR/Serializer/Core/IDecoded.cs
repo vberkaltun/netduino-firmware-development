@@ -5,11 +5,11 @@ namespace intelliPWR.Serializer
     /// </summary>
     interface IDecoded
     {
-        int SizeofDecodedDelimiter { get; set; }
-        int SizeofDecodedData { get; set; }
+        int SizeofDelimiter { get; set; }
+        int SizeofData { get; set; }
 
-        char[] DecodedDelimiter { get; set; }
-        string DecodedData { get; set; }
-        string[] DecodedResult { get; set; }
+        char[] Delimiter { get; set; }
+        string Data { get; set; }
+        string[] Result { get; set; }
     }
 }
