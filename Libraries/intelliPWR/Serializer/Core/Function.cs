@@ -19,14 +19,14 @@ namespace intelliPWR.Serializer
         protected void FillDecodedList()
         {
             // Declare and store separated words based on delimiter
-            string[] tempofResult = DecodedData.Trim(DecodedDelimiter).Split(DecodedDelimiter);
+            string[] tempofResult = Decoded.Data.Trim(Decoded.Delimiter).Split(Decoded.Delimiter);
 
             // Declare result data size based on newly calculated size
-            DecodedResult = new string[tempofResult.Length];
+            Decoded.Result = new string[tempofResult.Length];
 
             // Clone all of them
             for (int index = 0; index < tempofResult.Length; index++)
-               DecodedResult[index] = tempofResult[index];
+                Decoded.Result[index] = tempofResult[index];
         }
 
         /// <summary>
@@ -35,22 +35,22 @@ namespace intelliPWR.Serializer
         protected void FillEncodedList()
         {
             // Store the size of received data at the here
-            int sizeofAbsolute =SizeofEncodedDelimiter - SizeofEncodedData;
+            int sizeofAbsolute = Encoded.SizeofDelimiter - Encoded.SizeofData;
 
             // Declare an variable for storing done separator
             int checkedDelimiter = 0;
 
             // If absolute value is bigger than 0, add a delimiter to the first index
             if (sizeofAbsolute >= 0 && StartWithDelimiter)
-                EncodedResult += EncodedDelimiter[checkedDelimiter++];
+                Encoded.Result += Encoded.Delimiter[checkedDelimiter++];
 
-            for (int array = 0; array < SizeofEncodedData; array++)
+            for (int array = 0; array < Encoded.SizeofData; array++)
             {
                 // Get line by line characters and fill result data
-                EncodedResult += EncodedData[array];
+                Encoded.Result += Encoded.Data[array];
 
-                if (checkedDelimiter !=SizeofEncodedDelimiter)
-                    EncodedResult += EncodedDelimiter[checkedDelimiter++];
+                if (checkedDelimiter != Encoded.SizeofDelimiter)
+                    Encoded.Result += Encoded.Delimiter[checkedDelimiter++];
             }
         }
 
@@ -63,14 +63,14 @@ namespace intelliPWR.Serializer
             // Declare an variable for storing done separator
             int checkedDelimiter = 0;
 
-            for (int index = 0; index < SizeofDecodedData; index++)
+            for (int index = 0; index < Decoded.SizeofData; index++)
             {
                 // Found status flag, using for to find operate
                 bool foundFlag = false;
 
-                for (int subIndex = 0; subIndex < SizeofDecodedDelimiter; subIndex++)
+                for (int subIndex = 0; subIndex < Decoded.SizeofDelimiter; subIndex++)
                 {
-                    if (DecodedDelimiter[subIndex] == DecodedData[index])
+                    if (Decoded.Delimiter[subIndex] == Decoded.Data[index])
                     {
                         foundFlag = true;
                         break;
@@ -82,7 +82,7 @@ namespace intelliPWR.Serializer
                     continue;
 
                 // Check the overflow of counted Delimiter with the real size
-                if (checkedDelimiter >= SizeofDecodedDelimiter)
+                if (checkedDelimiter >= Decoded.SizeofDelimiter)
                     return false;
 
                 // IMPORTANT NOTICE: When we arrive there, we are on the right 
@@ -90,12 +90,12 @@ namespace intelliPWR.Serializer
                 // With real Delimiter position. This is important because the real 
                 // Order can be different from the calculation order that processed 
                 // at the here
-                if (DecodedDelimiter[checkedDelimiter++] != DecodedData[index])
+                if (Decoded.Delimiter[checkedDelimiter++] != Decoded.Data[index])
                     return false;
             }
 
             // Cross-check it again, must be equal with together
-            if (checkedDelimiter < SizeofDecodedDelimiter)
+            if (checkedDelimiter < Decoded.SizeofDelimiter)
                 return false;
 
             // Arrived final function
@@ -111,7 +111,7 @@ namespace intelliPWR.Serializer
         protected bool EncodeData()
         {
             // Store difference of given data and delimiter data
-            int AbsoluteofDifference = SizeofEncodedData -SizeofEncodedDelimiter;
+            int AbsoluteofDifference = Encoded.SizeofData - Encoded.SizeofDelimiter;
 
             // If calculated data is smaller than -1, calculate absolute value
             if (AbsoluteofDifference < -1)
@@ -126,10 +126,10 @@ namespace intelliPWR.Serializer
                 return false;
 
             // Check that whether given data includes a delimiters or not
-            for (int array = 0; array < SizeofEncodedData; array++)
-                for (int index = 0; index < EncodedData[array].Length; index++)
-                    for (int iterator = 0; iterator <SizeofEncodedDelimiter; iterator++)
-                        if (EncodedData[array][index] == EncodedDelimiter[iterator])
+            for (int array = 0; array < Encoded.SizeofData; array++)
+                for (int index = 0; index < Encoded.Data[array].Length; index++)
+                    for (int iterator = 0; iterator < Encoded.SizeofDelimiter; iterator++)
+                        if (Encoded.Data[array][index] == Encoded.Delimiter[iterator])
                             return false;
 
             // Arrived final function
@@ -148,11 +148,11 @@ namespace intelliPWR.Serializer
             // When you free up a pointer, you can not use it again anymore 
             // But when you make reassigning NULL to a pointer after the freeing up, 
             // You can this pointer again very well
-            DecodedDelimiter = null;
-            DecodedData = null;
+            Decoded.Delimiter = null;
+            Decoded.Data = null;
 
             if (isAllData)
-               DecodedResult = null;
+                Decoded.Result = null;
         }
 
         /// <summary>
@@ -165,11 +165,11 @@ namespace intelliPWR.Serializer
             // When you free up a pointer, you can not use it again anymore 
             // But when you make reassigning NULL to a pointer after the freeing up, 
             // You can this pointer again very well
-            EncodedDelimiter = null;
-            EncodedData = null;
+            Encoded.Delimiter = null;
+            Encoded.Data = null;
 
             if (isAllData)
-                EncodedResult = null;
+                Encoded.Result = null;
         }
 
         #endregion
@@ -189,12 +189,12 @@ namespace intelliPWR.Serializer
 
             // Best case. When we arrive there, that is mean all control is ok
             // And we can start to decoding operation now
-            DecodedData = data;
-            DecodedDelimiter = delimiter;
+            Decoded.Data = data;
+            Decoded.Delimiter = delimiter;
 
             // Store all received data size on lib
-            SizeofDecodedData = data.Length;
-            SizeofDecodedDelimiter = delimiter.Length;
+            Decoded.SizeofData = data.Length;
+            Decoded.SizeofDelimiter = delimiter.Length;
 
             // -----
 
@@ -207,7 +207,7 @@ namespace intelliPWR.Serializer
                 ClearDecodedList(false);
 
             // Return calculated data depending on flag status
-            return (decodeDataFlag ?DecodedResult : null);
+            return (decodeDataFlag ? Decoded.Result : null);
         }
 
         public string Encode(string[] data, char[] Delimiter)
@@ -223,12 +223,12 @@ namespace intelliPWR.Serializer
 
             // Best case. When we arrive there, that is mean all control is ok
             // And we can start to encoding operation now
-            EncodedData = data;
-            EncodedDelimiter = Delimiter;
+            Encoded.Data = data;
+            Encoded.Delimiter = Delimiter;
 
             // Store all received data size on lib
-            SizeofEncodedData = data.Length;
-           SizeofEncodedDelimiter = Delimiter.Length;
+            Encoded.SizeofData = data.Length;
+            Encoded.SizeofDelimiter = Delimiter.Length;
 
             // -----
 
@@ -241,7 +241,7 @@ namespace intelliPWR.Serializer
                 ClearEncodedList(false);
 
             // Return calculated data depending on flag status
-            return (encodeDataFlag ? EncodedResult : null);
+            return (encodeDataFlag ? Encoded.Result : null);
         }
 
         #endregion
