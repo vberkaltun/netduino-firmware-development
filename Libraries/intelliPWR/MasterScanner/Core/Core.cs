@@ -2,13 +2,26 @@ using Microsoft.SPOT.Hardware;
 
 namespace intelliPWR.MasterScanner
 {
-    public class Core : IConfig, ISlave
+    public class Core
     {
+        #region Variable
+
+        protected static I2CDevice.Configuration Configuration;
+        protected static I2CDevice Device;
+
+        protected SSlave Slave;
+        protected SConfig Config;
+
+        public ConnectedEventHandler OnConnected;
+        public DisconnectedEventHandler OnDisconnected;
+
+        #endregion
+
         #region Constant
 
         protected const byte DEFAULT_START_ADDRESS = 0x03;
         protected const byte DEFAULT_STOP_ADDRESS = 0x77;
-        protected const byte DEFAULT_ARRAY_SIZE = 0x7F;
+        protected const byte DEFAULT_ARRAY_SIZE = 0x80;
         protected const byte DEFAULT_ARRAY_COUNT = 0x00;
 
         protected const ushort DEFAULT_DEVICE_CLOCK = 100;
@@ -17,115 +30,109 @@ namespace intelliPWR.MasterScanner
 
         #endregion
 
-        #region Variable
+        #region Structure
 
-        protected static I2CDevice.Configuration Configuration;
-        protected static I2CDevice Device;
-
-        public ConnectedEventHandler OnConnected;
-        public DisconnectedEventHandler OnDisconnected;
-
-        #endregion
-
-        #region Encapsulation
-
-        private byte startAddress = DEFAULT_START_ADDRESS;
-        public byte StartAddress
+        protected struct SSlave : ISlave
         {
-            get
+            private byte startAddress;
+            public byte StartAddress
             {
-                return startAddress;
+                get
+                {
+                    return startAddress;
+                }
+
+                set
+                {
+                    startAddress = value;
+                }
             }
 
-            set
+            private byte stopAddress;
+            public byte StopAddress
             {
-                startAddress = value;
+                get
+                {
+                    return stopAddress;
+                }
+
+                set
+                {
+                    stopAddress = value;
+                }
+            }
+
+            private bool[] connectedSlavesArray;
+            public bool[] ConnectedSlavesArray
+            {
+                get
+                {
+                    return connectedSlavesArray;
+                }
+
+                set
+                {
+                    connectedSlavesArray = value;
+                }
+            }
+
+            private byte connectedSlavesCount;
+            public byte ConnectedSlavesCount
+            {
+                get
+                {
+                    return connectedSlavesCount;
+                }
+
+                set
+                {
+                    connectedSlavesCount = value;
+                }
             }
         }
 
-        private byte stopAddress = DEFAULT_STOP_ADDRESS;
-        public byte StopAddress
+        protected struct SConfig : IConfig
         {
-            get
+            private ushort clockSpeed;
+            public ushort ClockSpeed
             {
-                return stopAddress;
+                get
+                {
+                    return clockSpeed;
+                }
+
+                set
+                {
+                    clockSpeed = value;
+                }
             }
 
-            set
+            private ushort retryCount;
+            public ushort RetryCount
             {
-                stopAddress = value;
-            }
-        }
+                get
+                {
+                    return retryCount;
+                }
 
-        private bool[] connectedSlavesArray = new bool[DEFAULT_ARRAY_SIZE];
-        public bool[] ConnectedSlavesArray
-        {
-            get
-            {
-                return connectedSlavesArray;
-            }
-
-            set
-            {
-                connectedSlavesArray = value;
-            }
-        }
-
-        private byte connectedSlavesCount = DEFAULT_ARRAY_COUNT;
-        public byte ConnectedSlavesCount
-        {
-            get
-            {
-                return connectedSlavesCount;
+                set
+                {
+                    retryCount = value;
+                }
             }
 
-            set
+            private ushort timeout;
+            public ushort Timeout
             {
-                connectedSlavesCount = value;
-            }
-        }
+                get
+                {
+                    return timeout;
+                }
 
-        // -----
-
-        private ushort clockSpeed = DEFAULT_DEVICE_CLOCK;
-        public ushort ClockSpeed
-        {
-            get
-            {
-                return clockSpeed;
-            }
-
-            set
-            {
-                clockSpeed = value;
-            }
-        }
-
-        private ushort retryCount = DEFAULT_DEVICE_RETRY;
-        public ushort RetryCount
-        {
-            get
-            {
-                return retryCount;
-            }
-
-            set
-            {
-                retryCount = value;
-            }
-        }
-
-        private ushort timeout = DEFAULT_DEVICE_TIMEOUT;
-        public ushort Timeout
-        {
-            get
-            {
-                return timeout;
-            }
-
-            set
-            {
-                timeout = value;
+                set
+                {
+                    timeout = value;
+                }
             }
         }
 
