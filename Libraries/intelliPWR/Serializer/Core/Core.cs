@@ -1,5 +1,3 @@
-using System;
-
 namespace intelliPWR.Serializer
 {
     public class Core

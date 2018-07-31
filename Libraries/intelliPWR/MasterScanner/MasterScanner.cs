@@ -40,7 +40,7 @@ namespace intelliPWR.MasterScanner
         public MasterScanner()
         {
             // Initialize for first run
-            Initialize();
+            Initialize(DEFAULT_START_ADDRESS, DEFAULT_STOP_ADDRESS, DEFAULT_DEVICE_CLOCK, DEFAULT_DEVICE_TIMEOUT, DEFAULT_DEVICE_RETRY);
         }
 
         /// <summary>
@@ -50,11 +50,8 @@ namespace intelliPWR.MasterScanner
         /// <param name="stopAddress">The stop address of I2C scanner bus.</param>
         public MasterScanner(byte startAddress, byte stopAddress)
         {
-            StartAddress = startAddress;
-            StopAddress = stopAddress;
-
             // Initialize for first run
-            Initialize();
+            Initialize(startAddress, stopAddress, DEFAULT_DEVICE_CLOCK, DEFAULT_DEVICE_TIMEOUT, DEFAULT_DEVICE_RETRY);
         }
 
         /// <summary>
@@ -64,11 +61,8 @@ namespace intelliPWR.MasterScanner
         /// <param name="timeout">Time delay after an one clock hertz.</param>
         public MasterScanner(ushort clockSpeed, ushort timeout)
         {
-            ClockSpeed = clockSpeed;
-            Timeout = timeout;
-
             // Initialize for first run
-            Initialize();
+            Initialize(DEFAULT_START_ADDRESS, DEFAULT_STOP_ADDRESS, clockSpeed, timeout, DEFAULT_DEVICE_RETRY);
         }
 
         /// <summary>
@@ -79,12 +73,8 @@ namespace intelliPWR.MasterScanner
         /// <param name="retryCount">Retry count for worst case operations.</param>
         public MasterScanner(ushort clockSpeed, ushort timeout, ushort retryCount)
         {
-            ClockSpeed = clockSpeed;
-            Timeout = timeout;
-            RetryCount = retryCount;
-
             // Initialize for first run
-            Initialize();
+            Initialize(DEFAULT_START_ADDRESS, DEFAULT_STOP_ADDRESS, clockSpeed, timeout, retryCount);
         }
 
         /// <summary>
@@ -97,15 +87,8 @@ namespace intelliPWR.MasterScanner
         /// <param name="retryCount">Retry count for worst case operations.</param>
         public MasterScanner(byte startAddress, byte stopAddress, ushort clockSpeed, ushort timeout, ushort retryCount)
         {
-            StartAddress = startAddress;
-            StopAddress = stopAddress;
-
-            ClockSpeed = clockSpeed;
-            Timeout = timeout;
-            RetryCount = retryCount;
-
             // Initialize for first run
-            Initialize();
+            Initialize(startAddress, stopAddress, clockSpeed, timeout, retryCount);
         }
 
         #endregion

@@ -10,10 +10,33 @@ namespace intelliPWR.MasterScanner
         /// <summary>
         /// Default constructor initializer.
         /// </summary>
-        protected void Initialize()
+        /// <param name="startAddress">The start address of I2C scanner bus.</param>
+        /// <param name="stopAddress">The stop address of I2C scanner bus.</param>
+        /// <param name="clockSpeed">The clock speed of master scanner lib.</param>
+        /// <param name="timeout">Time delay after an one clock hertz.</param>
+        /// <param name="retryCount">Retry count for worst case operations.</param>
+        protected void Initialize(byte startAddress, byte stopAddress, ushort clockSpeed, ushort timeout, ushort retryCount)
         {
-            Configuration = new I2CDevice.Configuration(DEFAULT_START_ADDRESS, DEFAULT_DEVICE_CLOCK);
+            Configuration = new I2CDevice.Configuration(0, clockSpeed);
             Device = new I2CDevice(Configuration);
+
+            Slave = new SSlave();
+            Config = new SConfig();
+
+            if (CheckRange(startAddress, stopAddress))
+            {
+                Slave.StartAddress = startAddress;
+                Slave.StopAddress = stopAddress;
+            }
+            else
+                ResetRange();
+
+            Slave.ConnectedSlavesArray = new bool[DEFAULT_ARRAY_SIZE];
+            Slave.ConnectedSlavesCount = DEFAULT_ARRAY_COUNT;
+
+            Config.ClockSpeed = clockSpeed;
+            Config.RetryCount = retryCount;
+            Config.Timeout = timeout;
         }
 
         /// <summary>
@@ -21,16 +44,25 @@ namespace intelliPWR.MasterScanner
         /// </summary>
         /// <param name="array">An array of connected device list.</param>
         /// <param name="count">Size of connected device.</param>
-        protected void OnTriggeredConnected(string[] array, byte count)
+        protected void OnTriggeredConnected(string data)
         {
-
-            if (count != 0)
+            if (data != null)
             {
+                // We are passing here our data as a string type data but that 
+                // Is not acceptable for end-user. So we will trim it with space
+                // And after that will store this data in an string array
+                string[] connectedOutput = data.Trim().Split(' ');
+
                 // don't bother if user hasn't registered a callback
                 if (OnConnected == null)
                     return;
 
-                OnConnected(array, count);
+                OnConnected(connectedOutput, (byte)connectedOutput.Length);
+
+                //Debug.Print("=== OnConnected");
+
+                //for (int i = 0; i < connectedOutput.Length; i++)
+                //    Debug.Print(connectedOutput[i]);
             }
         }
 
@@ -39,15 +71,25 @@ namespace intelliPWR.MasterScanner
         /// </summary>
         /// <param name="array">An array of disconnected device list.</param>
         /// <param name="count">Size of disconnected device.</param>
-        protected void OnTriggeredDisconnected(string[] array, byte count)
+        protected void OnTriggeredDisconnected(string data)
         {
-            if (count != 0)
+            if (data != null)
             {
+                // We are passing here our data as a string type data but that 
+                // Is not acceptable for end-user. So we will trim it with space
+                // And after that will store this data in an string array
+                string[] disconnectedOutput = data.Trim().Split(' ');
+
                 // don't bother if user hasn't registered a callback
                 if (OnDisconnected == null)
                     return;
 
-                OnDisconnected(array, count);
+                OnDisconnected(disconnectedOutput, (byte)disconnectedOutput.Length);
+
+                //Debug.Print("=== OnDisconnected");
+
+                //for (int i = 0; i < disconnectedOutput.Length; i++)
+                //    Debug.Print(disconnectedOutput[i]);
             }
         }
 
@@ -79,7 +121,7 @@ namespace intelliPWR.MasterScanner
         protected void CleanRange(byte startAddress, byte stopAddress)
         {
             for (byte address = startAddress; address <= stopAddress; address++)
-                ConnectedSlavesArray[address] = false;
+                Slave.ConnectedSlavesArray[address] = false;
         }
 
         #endregion
@@ -98,14 +140,14 @@ namespace intelliPWR.MasterScanner
 
             if (CheckRange(startAddress, stopAddress))
             {
-                if (startAddress > StartAddress)
-                    CleanRange(StartAddress, (byte)(startAddress - 1));
+                if (startAddress > Slave.StartAddress)
+                    CleanRange(Slave.StartAddress, (byte)(startAddress - 1));
 
-                if (stopAddress < StopAddress)
-                    CleanRange((byte)(stopAddress + 1), StopAddress);
+                if (stopAddress < Slave.StopAddress)
+                    CleanRange((byte)(stopAddress + 1), Slave.StopAddress);
 
-                StartAddress = startAddress;
-                StopAddress = stopAddress;
+                Slave.StartAddress = startAddress;
+                Slave.StopAddress = stopAddress;
                 setRangeFlag = true;
             }
 
@@ -127,7 +169,7 @@ namespace intelliPWR.MasterScanner
         /// <returns>Connected or not Connected.</returns>
         public bool IsConnected(byte address)
         {
-            return ConnectedSlavesArray[address];
+            return Slave.ConnectedSlavesArray[address];
         }
 
         /// <summary>
@@ -135,44 +177,64 @@ namespace intelliPWR.MasterScanner
         /// </summary>
         public void ScanSlaves()
         {
+            // That is looking worst but it is very easy solution for up-to-date
+            // Scanning process. In scanning step, we will detect last changes
+            // On I2C bus and will put last changed to here as connected or not.
+            // After that, we will trim and split it with space delimiter.
+            // So, we can generate up-to-date output I2C data's
             string currentConnectedSlavesArray = null;
             string currentDisconnectedSlavesArray = null;
 
-            // Loop till related thread is not suspended
-            while (true)
+            // Start to scanning slave device on I2C bus
+            for (byte address = Slave.StartAddress; address < Slave.StopAddress; address++)
             {
-                // Start to scanning slave device on I2C bus
-                for (byte address = StartAddress; address < StopAddress; address++)
+                // Reinitialize config data of an I2C device
+                Device.Config = new I2CDevice.Configuration(address, Config.ClockSpeed);
+                byte[] handshake = new byte[] { address };
+
+                try
                 {
-                    // Reinitialize config data of an I2C device
-                    Device.Config = new I2CDevice.Configuration(address, ClockSpeed);
-                    byte[] handshake = new byte[] { address };
+                    // Generate a transaction for testing an connected device
+                    I2CDevice.I2CTransaction[] transaction = { I2CDevice.CreateWriteTransaction(handshake) };
+                    ushort retryCount = 0;
 
-                    try
+                    // When retry is overflowed, abort it to worst case
+                    while (Device.Execute(transaction, Config.Timeout) != handshake.Length)
+                        if (retryCount++ >= Config.RetryCount)
+                            throw new Exception();
+
+                    // Check that is it connected as before or not
+                    if (Slave.ConnectedSlavesArray[address] == false)
                     {
-                        // Generate a transaction for testing an connected device
-                        I2CDevice.I2CTransaction[] transaction = { I2CDevice.CreateWriteTransaction(handshake) };
-                        ushort retryCount = 0;
-
-                        // When retry is overflowed, abort it to worst case
-                        while (Device.Execute(transaction, Timeout) != handshake.Length)
-                            if (retryCount++ > RetryCount)
-                                throw new Exception();
-
                         currentConnectedSlavesArray += " " + address.ToString();
-                    }
-                    catch (Exception)
-                    {
-                        currentDisconnectedSlavesArray += " " + address.ToString();
+                        Slave.ConnectedSlavesArray[address] = true;
                     }
                 }
-
-                string[] connectedOutput = currentConnectedSlavesArray.Trim().Split(' ');
-                OnConnected(connectedOutput, (byte)connectedOutput.Length);
-
-                string[] disconnectedOutput = currentDisconnectedSlavesArray.Trim().Split(' ');
-                OnDisconnected(disconnectedOutput, (byte)disconnectedOutput.Length);
+                catch (Exception)
+                {
+                    // Check that is it disconnected as before or not
+                    if (Slave.ConnectedSlavesArray[address] == true)
+                    {
+                        currentDisconnectedSlavesArray += " " + address.ToString();
+                        Slave.ConnectedSlavesArray[address] = false;
+                    }
+                }
             }
+
+            // Notify end user with delegate method
+            OnTriggeredConnected(currentConnectedSlavesArray);
+            OnTriggeredDisconnected(currentDisconnectedSlavesArray);
+
+            // Issue 53 - Recommendation by NevynUK. At the here, we are 
+            // Disposing our device for next process and reinitializing it. When
+            // We choose to not to do that all process about scanning will stop 
+            // In next step. We experienced this situation at before
+            Device.Dispose();
+            Configuration = new I2CDevice.Configuration(0, Config.ClockSpeed);
+            Device = new I2CDevice(Configuration);
+
+            //Debug.EnableGCMessages(true);
+            //Debug.Print(Debug.GC(false).ToString());
         }
 
         #endregion
