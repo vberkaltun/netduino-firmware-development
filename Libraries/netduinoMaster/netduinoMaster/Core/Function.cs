@@ -1,0 +1,6 @@
+namespace netduinoMaster
+{
+    class Function
+    {
+    }
+}
