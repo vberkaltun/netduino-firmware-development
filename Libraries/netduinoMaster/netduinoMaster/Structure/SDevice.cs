@@ -16,8 +16,8 @@ namespace netduinoMaster
             }
         }
 
-        private SFunction[] function = new SFunction[] { };
-        public SFunction[] Function
+        private SFunctionArray function = new SFunctionArray();
+        public SFunctionArray Function
         {
             get
             {
@@ -62,17 +62,17 @@ namespace netduinoMaster
 
         public SDevice() { }
 
-        public SDevice(SVendor vendor, SFunction[] function, EHandshake handshake, char address)
+        public SDevice(SVendor vendor, SFunctionArray function, EHandshake handshake, char address)
         {
             Vendor.Brand = vendor.Brand;
             Vendor.Model = vendor.Model;
             Vendor.Version = vendor.Version;
 
             // Clone main data and after resize it
-            Function = new SFunction[function.Length];
+            Function = function;
 
-            for (int index = 0; index < function.Length; index++)
-                EFunction.Fill(ref Function[index], ref function[index]);
+            //for (int index = 0; index < function.Length; index++)
+            //    Function[index].Fill(function[index]);
 
             Handshake = handshake;
             Address = address;

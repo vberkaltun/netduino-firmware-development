@@ -2,8 +2,8 @@ namespace netduinoMaster
 {
     public class SMaster : IMaster
     {
-        private SFunction[] function = new SFunction[] { };
-        public SFunction[] Function
+        private SFunctionArray function = new SFunctionArray { };
+        public SFunctionArray Function
         {
             get
             {
@@ -48,13 +48,13 @@ namespace netduinoMaster
 
         public SMaster() { }
 
-        public SMaster(SFunction[] function, string receive, string transmit)
+        public SMaster(SFunctionArray function, string receive, string transmit)
         {
             // Clone main data and after resize it
-            Function = new SFunction[function.Length];
+            Function = function;
 
-            for (int index = 0; index < function.Length; index++)
-                EFunction.Fill(ref Function[index], ref function[index]);
+            //for (int index = 0; index < function.Length; index++)
+            //    Function[index].Fill(function[index]);
 
             Receive = receive;
             Transmit = transmit;
