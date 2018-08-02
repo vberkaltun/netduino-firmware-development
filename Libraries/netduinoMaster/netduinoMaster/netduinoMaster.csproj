@@ -35,8 +35,11 @@
   </PropertyGroup>
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
-    <Compile Include="Core\Core.cs" />
-    <Compile Include="Core\Function.cs" />
+    <Compile Include="Enumeration.cs" />
+    <Compile Include="Structure\SFunction.cs" />
+    <Compile Include="Structure\SDevice.cs" />
+    <Compile Include="Structure\SMaster.cs" />
+    <Compile Include="Structure\SVendor.cs" />
     <Compile Include="Extension\EDevice.cs" />
     <Compile Include="Extension\EFunction.cs" />
     <Compile Include="Interface\IDevice.cs" />
