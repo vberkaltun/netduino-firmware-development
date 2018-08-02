@@ -36,16 +36,16 @@
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
     <Compile Include="Enumeration.cs" />
+    <Compile Include="Interface\IVendor.cs" />
+    <Compile Include="Interface\IDevice.cs" />
+    <Compile Include="Interface\IFunction.cs" />
+    <Compile Include="Interface\IMaster.cs" />
     <Compile Include="Structure\SFunction.cs" />
     <Compile Include="Structure\SDevice.cs" />
     <Compile Include="Structure\SMaster.cs" />
     <Compile Include="Structure\SVendor.cs" />
-    <Compile Include="Extension\EDevice.cs" />
-    <Compile Include="Extension\EFunction.cs" />
-    <Compile Include="Interface\IDevice.cs" />
-    <Compile Include="Interface\IFunction.cs" />
-    <Compile Include="Interface\IMaster.cs" />
-    <Compile Include="Interface\IVendor.cs" />
+    <Compile Include="Extension\SDeviceArray.cs" />
+    <Compile Include="Extension\SFunctionArray.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
   </ItemGroup>
