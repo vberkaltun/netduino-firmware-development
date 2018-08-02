@@ -1,4 +1,4 @@
-﻿namespace intelliPWR.MasterScanner
+﻿namespace intelliPWR.MasterScanner.Interface
 {
     public interface IMasterScanner
     {

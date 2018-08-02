@@ -28,31 +28,56 @@
  * =============================================================================
  */
 
+using intelliPWR.Serializer.Structure;
+using intelliPWR.Serializer.Interface;
+
 namespace intelliPWR.Serializer
 {
-    public class Serializer : Function, ISerializer
+    public class Serializer : ISerializer
     {
-        #region Constructor
+        #region Variable
 
-        /// <summary>
-        /// Default constructor.
-        /// </summary>
-        public Serializer()
+        protected SDecoded Decoded;
+        protected SEncoded Encoded;
+
+        #endregion
+
+        #region Public
+
+        public string[] Decode(string data, char[] delimiter)
         {
-            // Initialize for first run
-            Initialize();
+            if (data == null)
+                return null;
+
+            if (delimiter == null)
+                return null;
+
+            // Clear last stored data
+            Decoded.Clear();
+
+            // Best case. All control is ok
+            Decoded = new SDecoded(data, delimiter);
+
+            // Return calculated data depending on flag status
+            return (Decoded.Decode() ? Decoded.Result : null);
         }
 
-        /// <summary>
-        /// Default constructor with start parameters.
-        /// </summary>
-        /// <param name="startWithDelimiter">When delimiter size is equal to data size, choose start option.</param>
-        public Serializer(bool startWithDelimiter)
+        public string Encode(bool startWithDelimiter, string[] data, char[] delimiter)
         {
-            StartWithDelimiter = startWithDelimiter;
+            if (data == null)
+                return null;
 
-            // Initialize for first run
-            Initialize();
+            if (delimiter == null)
+                return null;
+
+            // Clear last stored data
+            Encoded.Clear();
+
+            // Best case. All control is ok
+            Encoded = new SEncoded(startWithDelimiter, data, delimiter);
+
+            // Return calculated data depending on flag status
+            return (Encoded.Encode() ? Encoded.Result : null);
         }
 
         #endregion

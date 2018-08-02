@@ -1,8 +1,5 @@
-namespace intelliPWR.MasterScanner
+namespace intelliPWR.MasterScanner.Interface
 {
-    /// <summary>
-    /// Config's field.
-    /// </summary>
     interface IConfig
     {
         ushort ClockSpeed { get; set; }
