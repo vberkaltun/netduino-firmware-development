@@ -30,8 +30,15 @@
 
 namespace intelliPWR.Serializer
 {
-    public class Serializer : Function, ISerializer
+    public class Serializer : ISerializer
     {
+        #region Variable
+
+        protected SDecoded Decoded;
+        protected SEncoded Encoded;
+
+        #endregion
+
         #region Constructor
 
         /// <summary>
@@ -39,20 +46,46 @@ namespace intelliPWR.Serializer
         /// </summary>
         public Serializer()
         {
-            // Initialize for first run
-            Initialize();
+            Decoded = new SDecoded();
+            Encoded = new SEncoded();
         }
 
-        /// <summary>
-        /// Default constructor with start parameters.
-        /// </summary>
-        /// <param name="startWithDelimiter">When delimiter size is equal to data size, choose start option.</param>
-        public Serializer(bool startWithDelimiter)
-        {
-            StartWithDelimiter = startWithDelimiter;
+        #endregion
 
-            // Initialize for first run
-            Initialize();
+        #region Public
+
+        public string[] Decode(char[] delimiter, string data)
+        {
+            // Clear last stored data
+            Decoded.Clear();
+
+            if (data == null)
+                return null;
+
+            if (delimiter == null)
+                return null;
+
+            Decoded = new SDecoded(delimiter, data);
+
+            // Return calculated data depending on flag status
+            return (Decoded.Decode() ? Decoded.Result : null);
+        }
+
+        public string Encode(bool startWithDelimiter, char[] delimiter, string[] data)
+        {
+            // Clear last stored data
+            Encoded.Clear();
+
+            if (data == null)
+                return null;
+
+            if (delimiter == null)
+                return null;
+
+            Encoded = new SEncoded(startWithDelimiter, delimiter, data);
+
+            // Return calculated data depending on flag status
+            return (Encoded.Encode() ? Encoded.Result : null);
         }
 
         #endregion

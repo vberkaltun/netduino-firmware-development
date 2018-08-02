@@ -30,13 +30,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Core\Function.cs" />
-    <Compile Include="Interface\IDecoded.cs" />
     <Compile Include="Interface\IEncoded.cs" />
+    <Compile Include="Interface\IDecoded.cs" />
+    <Compile Include="Structure\SEncoded.cs" />
+    <Compile Include="Structure\SDecoded.cs" />
     <Compile Include="Interface\ISerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer.cs" />
-    <Compile Include="Core\Core.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.SPOT.Native" />

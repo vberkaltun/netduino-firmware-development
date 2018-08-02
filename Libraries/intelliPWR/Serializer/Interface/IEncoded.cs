@@ -1,15 +1,16 @@
-namespace intelliPWR.Serializer
+﻿namespace intelliPWR.Serializer
 {
-    /// <summary>
-    /// Encoded data's field.
-    /// </summary>
-    interface IEncoded
+    public interface IEncoded
     {
-        int SizeofDelimiter { get; set; }
-        int SizeofData { get; set; }
-
-        char[] Delimiter { get; set; }
         string[] Data { get; set; }
+        char[] Delimiter { get; set; }
         string Result { get; set; }
+        int SizeofData { get; set; }
+        int SizeofDelimiter { get; set; }
+        bool StartWithDelimiter { get; set; }
+
+        void Clear();
+        bool Encode();
+        void Fill();
     }
 }

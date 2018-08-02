@@ -2,7 +2,7 @@
 {
     public interface ISerializer
     {
-        string[] Decode(string data, char[] delimiter);
-        string Encode(string[] data, char[] Delimiter);
+        string[] Decode(char[] delimiter, string data);
+        string Encode(bool startWithDelimiter, char[] delimiter, string[] data);
     }
 }

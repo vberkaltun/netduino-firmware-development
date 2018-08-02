@@ -30,11 +30,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Core\Core.cs" />
-    <Compile Include="Interface\IConfig.cs" />
-    <Compile Include="Core\Function.cs" />
-    <Compile Include="Interface\ISlave.cs" />
+    <Compile Include="Constant.cs" />
+    <Compile Include="Delegate.cs" />
     <Compile Include="Interface\IMasterScanner.cs" />
+    <Compile Include="Structure\SConfig.cs" />
+    <Compile Include="Structure\SSlave.cs" />
+    <Compile Include="Interface\IConfig.cs" />
+    <Compile Include="Interface\ISlave.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MasterScanner.cs" />
   </ItemGroup>
