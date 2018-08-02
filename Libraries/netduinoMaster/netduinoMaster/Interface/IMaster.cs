@@ -1,8 +1,8 @@
-namespace netduinoMaster
+﻿namespace netduinoMaster
 {
-    interface IMaster
+    public interface IMaster
     {
-        SFunction[] Function { get; set; }
+        SFunctionArray Function { get; set; }
         string Receive { get; set; }
         string Transmit { get; set; }
     }

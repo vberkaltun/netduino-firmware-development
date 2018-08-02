@@ -1,9 +1,9 @@
-namespace netduinoMaster
+﻿namespace netduinoMaster
 {
-    interface IFunction
+    public interface IFunction
     {
+        ushort Listen { get; set; }
         string Name { get; set; }
         bool Request { get; set; }
-        ushort Listen { get; set; }
     }
 }

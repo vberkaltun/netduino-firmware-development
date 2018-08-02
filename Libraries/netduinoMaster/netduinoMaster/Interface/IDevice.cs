@@ -1,10 +1,10 @@
-namespace netduinoMaster
+﻿namespace netduinoMaster
 {
-    interface IDevice
+    public interface IDevice
     {
-        SVendor Vendor { get; set; }
-        SFunction[] Function { get; set; }
-        EHandshake Handshake { get; set; }
         char Address { get; set; }
+        SFunctionArray Function { get; set; }
+        EHandshake Handshake { get; set; }
+        SVendor Vendor { get; set; }
     }
 }

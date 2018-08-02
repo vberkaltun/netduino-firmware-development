@@ -1,6 +1,6 @@
-namespace netduinoMaster
+﻿namespace netduinoMaster
 {
-    interface IVendor
+    public interface IVendor
     {
         string Brand { get; set; }
         string Model { get; set; }
