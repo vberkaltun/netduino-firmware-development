@@ -31,9 +31,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Core\Function.cs" />
-    <Compile Include="Core\IDecoded.cs" />
-    <Compile Include="Core\IEncoded.cs" />
-    <Compile Include="ISerializer.cs" />
+    <Compile Include="Interface\IDecoded.cs" />
+    <Compile Include="Interface\IEncoded.cs" />
+    <Compile Include="Interface\ISerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer.cs" />
     <Compile Include="Core\Core.cs" />

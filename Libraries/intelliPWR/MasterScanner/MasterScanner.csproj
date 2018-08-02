@@ -31,10 +31,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Core\Core.cs" />
-    <Compile Include="Core\IConfig.cs" />
+    <Compile Include="Interface\IConfig.cs" />
     <Compile Include="Core\Function.cs" />
-    <Compile Include="Core\ISlave.cs" />
-    <Compile Include="IMasterScanner.cs" />
+    <Compile Include="Interface\ISlave.cs" />
+    <Compile Include="Interface\IMasterScanner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MasterScanner.cs" />
   </ItemGroup>
