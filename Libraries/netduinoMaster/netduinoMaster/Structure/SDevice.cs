@@ -44,8 +44,8 @@ namespace netduinoMaster
             }
         }
 
-        private char address = '\0';
-        public char Address
+        private byte address = 0;
+        public byte Address
         {
             get
             {
@@ -62,7 +62,7 @@ namespace netduinoMaster
 
         public SDevice() { }
 
-        public SDevice(SVendor vendor, SFunctionArray function, EHandshake handshake, char address)
+        public SDevice(SVendor vendor, SFunctionArray function, EHandshake handshake, byte address)
         {
             Vendor.Brand = vendor.Brand;
             Vendor.Model = vendor.Model;

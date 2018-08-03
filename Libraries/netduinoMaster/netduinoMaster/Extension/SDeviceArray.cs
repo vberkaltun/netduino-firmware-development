@@ -2,7 +2,23 @@ namespace netduinoMaster
 {
     public class SDeviceArray
     {
-        SDevice[] Device = new SDevice[] { };
+        private SDevice[] Device = new SDevice[] { };
+
+        public int Length
+        {
+            get
+            {
+                return Device.Length;
+            }
+        }
+
+        public SDevice this[int index]
+        {
+            get
+            {
+                return Device[index];
+            }
+        }
 
         #region Public
 

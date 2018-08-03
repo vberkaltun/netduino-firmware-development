@@ -1,3 +1,6 @@
+using SecretLabs.NETMF.Hardware.Netduino;
+using static Microsoft.SPOT.Hardware.Cpu;
+
 namespace netduinoMaster
 {
     public class Constant
@@ -46,11 +49,17 @@ namespace netduinoMaster
 
         // Outside and Inside protocol delimiters
         protected const string PROTOCOL_DELIMITERS = "";
-        protected const string DATA_DELIMITER = "";
+        protected const char DATA_DELIMITER = '';
 
         // Start and end type of protocol delimiters
-        protected const byte IDLE_SINGLE_START = 0x15;
-        protected const byte IDLE_MULTI_START = 0x16;
-        protected const byte IDLE_MULTI_END = 0x17;
+        protected const char IDLE_SINGLE_START = '';
+        protected const char IDLE_MULTI_START = '';
+        protected const char IDLE_MULTI_END = '';
+
+        // RGB led pins and solid state relay pin, additional frequency
+        protected static readonly ushort BLINK_FREQUENCY = 100;
+        protected static readonly PWMChannel BLINK_R = PWMChannels.PWM_PIN_D9;
+        protected static readonly PWMChannel BLINK_GB = PWMChannels.PWM_PIN_D10;
+        protected static readonly PWMChannel SSR = PWMChannels.PWM_PIN_D11;
     }
 }

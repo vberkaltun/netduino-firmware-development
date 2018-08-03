@@ -35,14 +35,14 @@
   </PropertyGroup>
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
+    <Compile Include="Constant.cs" />
     <Compile Include="Enumeration.cs" />
+    <Compile Include="Extension\SStringArray.cs" />
     <Compile Include="Interface\IVendor.cs" />
     <Compile Include="Interface\IDevice.cs" />
     <Compile Include="Interface\IFunction.cs" />
-    <Compile Include="Interface\IMaster.cs" />
     <Compile Include="Structure\SFunction.cs" />
     <Compile Include="Structure\SDevice.cs" />
-    <Compile Include="Structure\SMaster.cs" />
     <Compile Include="Structure\SVendor.cs" />
     <Compile Include="Extension\SDeviceArray.cs" />
     <Compile Include="Extension\SFunctionArray.cs" />
@@ -50,6 +50,12 @@
     <Compile Include="Program.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="intelliPWR.MasterScanner">
+      <HintPath>..\..\intelliPWR\MasterScanner\bin\Release\intelliPWR.MasterScanner.dll</HintPath>
+    </Reference>
+    <Reference Include="intelliPWR.Serializer">
+      <HintPath>..\..\intelliPWR\Serializer\bin\Release\intelliPWR.Serializer.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.SPOT.Hardware" />
     <Reference Include="Microsoft.SPOT.Hardware.PWM" />
     <Reference Include="Microsoft.SPOT.Hardware.SerialPort" />

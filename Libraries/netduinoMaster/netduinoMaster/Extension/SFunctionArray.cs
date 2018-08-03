@@ -4,6 +4,22 @@ namespace netduinoMaster
     {
         SFunction[] Function = new SFunction[] { };
 
+        public int Length
+        {
+            get
+            {
+                return Function.Length;
+            }
+        }
+
+        public SFunction this[int index]
+        {
+            get
+            {
+                return Function[index];
+            }
+        }
+
         #region Function
 
         /// <summary>
