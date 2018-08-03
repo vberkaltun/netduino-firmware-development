@@ -23,11 +23,9 @@ namespace netduinoMaster
         static ECommunication Communication = ECommunication.Idle;
         static ENotify Notify = ENotify.Offline;
 
-        static SStringArray String = new SStringArray();
         static SDeviceArray Device = new SDeviceArray();
-        static SFunctionArray Function = new SFunctionArray { };
+        static SStringArray Transmit = new SStringArray();
         static string Receive = null;
-        static string[][] Transmit = null;
 
         #endregion
 
@@ -76,6 +74,13 @@ namespace netduinoMaster
 
         private static void OnConnected(string[] array, byte count)
         {
+            // IMPORTANT NOTICE: Before the calling internal functions,
+            // Last stored data must be removed on memory. Otherwise, we can not sent
+            // Last stored data to master device. And additional, data removing will refresh
+            // the size of data in memory. This is most important thing ...
+            Transmit.Clear();
+            Receive = null;
+
             Debug.Print("Done! " + ((int)count).ToString() + " slave device(s) connected to I2C bus. ID(s): ");
             foreach (var item in array)
                 Debug.Print("\t ID: 0x" + item);
@@ -84,6 +89,13 @@ namespace netduinoMaster
 
         private static void OnDisconnected(string[] array, byte count)
         {
+            // IMPORTANT NOTICE: Before the calling internal functions,
+            // Last stored data must be removed on memory. Otherwise, we can not sent
+            // Last stored data to master device. And additional, data removing will refresh
+            // the size of data in memory. This is most important thing ...
+            Transmit.Clear();
+            Receive = null;
+
             Debug.Print("Done! " + ((int)count).ToString() + " slave device(s) disconnected from I2C bus. ID(s): ");
             foreach (var item in array)
                 Debug.Print("\t ID: 0x" + item);
@@ -221,7 +233,7 @@ namespace netduinoMaster
             // Last stored data must be removed on memory. Otherwise, we can not sent
             // Last stored data to master device. And additional, data removing will refresh
             // the size of data in memory. This is most important thing ...
-            String.Clear();
+            Transmit.Clear();
 
             // Second, calculate size of data and modulus
             ushort modulusofString = (ushort)(data.Length % DIVISOR_NUMBER);
@@ -262,7 +274,7 @@ namespace netduinoMaster
                     outputData = outputData + IDLE_MULTI_START;
 
                 outputData = outputData + PROTOCOL_DELIMITERS[2];
-                String.Enqueue(outputData);
+                Transmit.Enqueue(outputData);
             }
 
             // If everything goes well, we will arrive here and return true
@@ -278,8 +290,8 @@ namespace netduinoMaster
             // Last stored data must be removed on memory. Otherwise, we can not sent
             // Last stored data to master device. And additional, data removing will refresh
             // the size of data in memory. This is most important thing ...
+            Transmit.Clear();
             Receive = null;
-            Transmit = null;
         }
 
         private static string GenerateHexadecimal(byte data)
