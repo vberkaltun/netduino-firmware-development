@@ -32,9 +32,9 @@
   <ItemGroup>
     <Compile Include="Interface\IEncoded.cs" />
     <Compile Include="Interface\IDecoded.cs" />
+    <Compile Include="Interface\ISerializer.cs" />
     <Compile Include="Structure\SEncoded.cs" />
     <Compile Include="Structure\SDecoded.cs" />
-    <Compile Include="Interface\ISerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serializer.cs" />
   </ItemGroup>

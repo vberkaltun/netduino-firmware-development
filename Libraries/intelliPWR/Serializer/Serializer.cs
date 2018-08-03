@@ -54,6 +54,17 @@ namespace intelliPWR.Serializer
 
         #region Public
 
+        public string[] Decode(char delimiter, string data)
+        {
+            // Store count of found on this variable
+            char[] arrayofDelimiter = new char[data.Length - 1];
+
+            for (ushort index = 0; index < arrayofDelimiter.Length; index++)
+                arrayofDelimiter[index] = delimiter;
+
+            return Decode(arrayofDelimiter, data);
+        }
+
         public string[] Decode(char[] delimiter, string data)
         {
             // Clear last stored data
@@ -69,6 +80,22 @@ namespace intelliPWR.Serializer
 
             // Return calculated data depending on flag status
             return (Decoded.Decode() ? Decoded.Result : null);
+        }
+
+        public string Encode(char delimiter, string[] data)
+        {
+            // Store count of found on this variable
+            char[] arrayofDelimiter = new char[data.Length - 1];
+
+            for (ushort index = 0; index < arrayofDelimiter.Length; index++)
+                arrayofDelimiter[index] = delimiter;
+
+            return Encode(true, arrayofDelimiter, data);
+        }
+
+        public string Encode(char[] delimiter, string[] data)
+        {
+            return Encode(true, delimiter, data);
         }
 
         public string Encode(bool startWithDelimiter, char[] delimiter, string[] data)
