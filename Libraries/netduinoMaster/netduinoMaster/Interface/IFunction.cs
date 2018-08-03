@@ -2,7 +2,7 @@
 {
     public interface IFunction
     {
-        ushort Listen { get; set; }
+        bool Listen { get; set; }
         string Name { get; set; }
         bool Request { get; set; }
     }

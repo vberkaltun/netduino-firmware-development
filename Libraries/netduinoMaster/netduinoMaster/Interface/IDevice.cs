@@ -2,7 +2,7 @@
 {
     public interface IDevice
     {
-        char Address { get; set; }
+        byte Address { get; set; }
         SFunctionArray Function { get; set; }
         EHandshake Handshake { get; set; }
         SVendor Vendor { get; set; }

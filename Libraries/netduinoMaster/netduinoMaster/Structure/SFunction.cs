@@ -30,8 +30,8 @@ namespace netduinoMaster
             }
         }
 
-        private ushort listen = 0;
-        public ushort Listen
+        private bool listen = false;
+        public bool Listen
         {
             get
             {
@@ -48,7 +48,7 @@ namespace netduinoMaster
 
         public SFunction() { }
 
-        public SFunction(string name, bool request, ushort listen)
+        public SFunction(string name, bool request, bool listen)
         {
             Name = name;
             Request = request;
