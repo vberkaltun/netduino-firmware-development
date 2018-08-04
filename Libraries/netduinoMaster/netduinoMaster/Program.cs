@@ -186,7 +186,7 @@ namespace netduinoMaster
 
         #endregion
 
-        #region Loop
+        #region Listen
 
         private static void listenFunction()
         {
@@ -363,7 +363,7 @@ namespace netduinoMaster
             {
                 case IDLE_SINGLE_START:
                 case IDLE_MULTI_END:
-                    Communication  = ECommunication.End;
+                    Communication = ECommunication.End;
                     break;
 
                 case IDLE_MULTI_START:
@@ -379,7 +379,7 @@ namespace netduinoMaster
             }
 
             // If everything goes well, we will arrive here and return true
-            Receive = Receive+ newReceivedBuffer[0];
+            Receive = Receive + newReceivedBuffer[0];
             return true;
         }
 
@@ -397,7 +397,7 @@ namespace netduinoMaster
 
             // Second, calculate size of data and modulus
             ushort modulusofString = (ushort)(data.Length % DIVISOR_NUMBER);
-            ushort sizeofString = (ushort)(data.Length / DIVISOR_NUMBER) ;
+            ushort sizeofString = (ushort)(data.Length / DIVISOR_NUMBER);
             char[] inputData = data.ToCharArray();
 
             // Add modulos of data, if possible
@@ -445,7 +445,7 @@ namespace netduinoMaster
 
         #region RGB
 
-        public static void Blink(double hue, double saturation, double value, double red, double green, double blue)
+        public static void HSVToRGB(double hue, double saturation, double value, double red, double green, double blue)
         {
             // hue parameter checking/fixing
             if (hue < 0 || hue >= 360)
@@ -532,19 +532,19 @@ namespace netduinoMaster
                 }
             }
 
-            RGBRed.DutyCycle = Clamp(red);
-            RGBGreen.DutyCycle = Clamp(green);
-            RGBBlue.DutyCycle = Clamp(blue);
+            RGBRed.DutyCycle = ClampRGB(red);
+            RGBGreen.DutyCycle = ClampRGB(green);
+            RGBBlue.DutyCycle = ClampRGB(blue);
         }
 
-        public static double Clamp(double index)
+        public static double ClampRGB(double index)
         {
             if (index < 0) return 0;
             if (index > 1) return 1;
             return index;
         }
 
-        public static void Transformation(SColorbook source, SColorbook target, int divider, int sleep)
+        public static void ChangeRGBStatus(SColorbook source, SColorbook target, int divider, int sleep)
         {
             SColorbook effect = new SColorbook(
                 (target.Red - source.Red) / divider,
@@ -562,7 +562,7 @@ namespace netduinoMaster
             double saturation = source.Saturation;
             double value = source.Value;
 
-            Blink(hue, saturation, value, red, green, blue);
+            HSVToRGB(hue, saturation, value, red, green, blue);
             for (int index = 0; index < divider; index++)
             {
                 red = red + effect.Red;
@@ -572,9 +572,61 @@ namespace netduinoMaster
                 saturation = saturation + effect.Saturation;
                 value = value + effect.Value;
 
-                Blink(hue, saturation, value, red, green, blue);
+                HSVToRGB(hue, saturation, value, red, green, blue);
                 Thread.Sleep(sleep);
             }
+        }
+
+        public static void SetRGBStatus(ENotify status)
+        {
+            switch (status)
+            {
+                case ENotify.Offline:
+                    switch (Notify)
+                    {
+                        case ENotify.Online:
+                            ChangeRGBStatus(ColorWhite, ColorBlack, BLINK_CLOCKRATE, 1);
+                            break;
+                        case ENotify.Unconfirmed:
+                            ChangeRGBStatus(ColorOrange, ColorBlack, BLINK_CLOCKRATE, 1);
+                            break;
+                        case ENotify.Confirmed:
+                            ChangeRGBStatus(ColorBlue, ColorBlack, BLINK_CLOCKRATE, 1);
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+
+                case ENotify.Online:
+                    for (int index = 0; index < 2; index++)
+                    {
+                        ChangeRGBStatus(ColorBlack, ColorWhite, BLINK_CLOCKRATE, 0);
+                        Thread.Sleep(200);
+
+                        ChangeRGBStatus(ColorWhite, ColorBlack, BLINK_CLOCKRATE, 1);
+                        Thread.Sleep(500);
+                    }
+                    ChangeRGBStatus(ColorBlack, ColorWhite, BLINK_CLOCKRATE, 0);
+                    break;
+
+                case ENotify.Unconfirmed:
+                    ChangeRGBStatus(ColorWhite, ColorOrange, BLINK_CLOCKRATE, 0);
+                    break;
+
+                case ENotify.Confirmed:
+                    ChangeRGBStatus(ColorWhite, ColorBlue, BLINK_CLOCKRATE, 0);
+                    break;
+
+                default:
+                    break;
+            }
+
+            // Wait for 2.5 second, otherwise it can be blocked by next process
+            Thread.Sleep(2500);
+
+            // Do not forget to set RGB status
+            Notify = status;
         }
 
         #endregion
