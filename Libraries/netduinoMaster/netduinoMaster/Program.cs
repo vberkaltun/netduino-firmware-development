@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Threading;
 using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
@@ -12,7 +13,16 @@ namespace netduinoMaster
     {
         #region Variable
 
-        static MasterScanner Scanner = new MasterScanner();
+        static PWM RGBRed = new PWM(PWMChannels.PWM_PIN_D11, 100, 0, true);
+        static PWM RGBGreen = new PWM(PWMChannels.PWM_PIN_D10, 100, 0, true);
+        static PWM RGBBlue = new PWM(PWMChannels.PWM_PIN_D9, 100, 0, true);
+
+        static SColorbook ColorBlack = new SColorbook(0, 0, 0, 0, 0, 0);
+        static SColorbook ColorWhite = new SColorbook(255, 255, 255, 0, 0, 1);
+        static SColorbook ColorBlue = new SColorbook(0, 204, 204, 180, 1, 0.8);
+        static SColorbook ColorOrange = new SColorbook(255, 128, 0, 30, 1, 1);
+
+        static MasterScanner Scanner = new MasterScanner(I2C_START_ADDRESS, I2C_STOP_ADDRESS);
         static Serializer Serializer = new Serializer();
 
         static Timer TimerI2C = null;
@@ -27,10 +37,20 @@ namespace netduinoMaster
         static SStringArray Transmit = new SStringArray();
         static string Receive = null;
 
+        static I2CDevice.Configuration Configuration;
+        static I2CDevice I2C;
+
         #endregion
+
+        #region Uncategorized
 
         public static void Main()
         {
+            // Start Pulse-Width Modulation of led operation
+            RGBRed.Start();
+            RGBGreen.Start();
+            RGBBlue.Start();
+
             // IMPORTANT NOTICE: Due to our I2C scanner lib, When a new device
             // Connected or disconnected to master, our I2C scanner lib decides
             // Which one is to be triggered
@@ -49,6 +69,68 @@ namespace netduinoMaster
             // Slice to another thread
             Thread.Sleep(Timeout.Infinite);
         }
+
+        public static void UnknownEvent()
+        {
+            // Notify user
+            Debug.Print("Error! Unexpected <" + Receive + ">[" + Receive.Length.ToString() + "] data received.");
+
+            // IMPORTANT NOTICE: Before the calling internal functions,
+            // Last stored data must be removed on memory. Otherwise, we can not sent
+            // Last stored data to master device. And additional, data removing will refresh
+            // the size of data in memory. This is most important thing ...
+            Transmit.Clear();
+            Receive = null;
+        }
+
+        public static string GenerateHexadecimal(byte data)
+        {
+            string result = null;
+            byte division = data;
+
+            while (division != 0)
+            {
+                byte remainder = (byte)(division % 16);
+                division = (byte)((division - remainder) / 16);
+
+                // At the here, we are converting 0 to 9 as directly to string, 
+                // But when we calculate and find 10 to 15, we are using ASCII 
+                // Table for decoding it. The default case for this process is 
+                // Uppercase. So we are adding 55 (additional case 10) to result
+                switch (remainder)
+                {
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                    case 8:
+                    case 9:
+                        result = remainder.ToString() + result;
+                        break;
+                    case 10:
+                    case 11:
+                    case 12:
+                    case 13:
+                    case 14:
+                    case 15:
+                        result = ((char)(remainder + 55)).ToString() + result;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            // Return calculated result to caller
+            return result;
+        }
+
+        #endregion
+
+        #region Trigger
 
         private static void OnCallback(object state)
         {
@@ -101,6 +183,10 @@ namespace netduinoMaster
                 Debug.Print("\t ID: 0x" + item);
             Debug.Print("\t ---");
         }
+
+        #endregion
+
+        #region Loop
 
         private static void listenFunction()
         {
@@ -177,15 +263,89 @@ namespace netduinoMaster
         {
         }
 
+        #endregion
+
+        #region I2C
+
         private static bool Write(byte address, string data)
         {
-            return false;
+            // Free up out-of-date buffer data, top level clearing
+            Receive = null;
+
+            // Encode given data for bus communication
+            Encode(data);
+
+            // Send all remainder data to newly registered slave
+            while (Transmit.Length != 0)
+            {
+                // Reinitialize config data of an I2C device
+                Configuration = new I2CDevice.Configuration(address, I2C_BUS_CLOCKRATE);
+                I2C = new I2CDevice(Configuration);
+                byte[] handshake = Encoding.UTF8.GetBytes(Transmit.Dequeue());
+
+                // Generate a transaction for testing an connected device
+                I2CDevice.I2CTransaction[] transaction = { I2CDevice.CreateWriteTransaction(handshake) };
+
+                // When retry is overflowed, abort it to worst case
+                I2C.Execute(transaction, I2C_BUS_TIMEOUT);
+                I2C.Dispose();
+
+                // Maybe not need, right?
+                Thread.Sleep(15);
+            }
+
+            // IMPORTANT NOTICE: Due to decoding of slave device, we need to Wait
+            // A little bit. Otherwise, Master device will request data From slave
+            // Device too early and slave cannot send it. Additional, when more
+            // Devices are connected, we need to downgrade delay time. Already,
+            // It will take the same time during roaming
+            Thread.Sleep(100);
+
+            // If everything goes well, we will arrive here and return true
+            return true;
         }
 
         private static bool Read(byte address)
         {
-            return false;
+            // Reinitialize config data of an I2C device
+            Configuration = new I2CDevice.Configuration(address, I2C_BUS_CLOCKRATE);
+            I2C = new I2CDevice(Configuration);
+            byte[] newReceivedBuffer = new byte[BUFFER_SIZE];
+
+            // Generate a transaction for testing an connected device
+            I2CDevice.I2CTransaction[] transaction = { I2CDevice.CreateReadTransaction(newReceivedBuffer) };
+
+            // When retry is overflowed, abort it to worst case
+            while (I2C.Execute(transaction, I2C_BUS_TIMEOUT) != newReceivedBuffer.Length) { }
+
+            // IMPORTANT NOTICE: Convert all given data to char array. At the here,
+            // We are choosed stop bit from our experience at before. This stop bit 
+            // Can be different on the another board. So, please be very carefully
+            string output = null;
+            foreach (var item in newReceivedBuffer)
+            {
+                if (item == I2C_BUS_ENDOFLINE)
+                    break;
+                output = output + (char)item;
+            }
+
+            // Maybe not need, right?
+            Thread.Sleep(15);
+
+            // Decode last given data
+            if (!Decode(output))
+                return false;
+
+            // IMPORTANT NOTICE: Actually When we arrived this point, we arrived
+            // Worst case point even though It was TRUE. If you came there, program will
+            // Run till communication flag will be END or IDLE type. Otherwise, this
+            // Point is related with CONTINUE status
+            return true;
         }
+
+        #endregion
+
+        #region Serializer
 
         private static bool Decode(string data)
         {
@@ -281,62 +441,142 @@ namespace netduinoMaster
             return true;
         }
 
-        private static void UnknownEvent()
+        #endregion
+
+        #region RGB
+
+        public static void Blink(double hue, double saturation, double value, double red, double green, double blue)
         {
-            // Notify user
-            Debug.Print("Error! Unexpected <" + Receive + ">[" + Receive.Length.ToString() + "] data received.");
-
-            // IMPORTANT NOTICE: Before the calling internal functions,
-            // Last stored data must be removed on memory. Otherwise, we can not sent
-            // Last stored data to master device. And additional, data removing will refresh
-            // the size of data in memory. This is most important thing ...
-            Transmit.Clear();
-            Receive = null;
-        }
-
-        private static string GenerateHexadecimal(byte data)
-        {
-            string result = null;
-            byte division = data;
-
-            while (division != 0)
+            // hue parameter checking/fixing
+            if (hue < 0 || hue >= 360)
             {
-                byte remainder = (byte)(division % 16);
-                division = (byte)((division - remainder) / 16);
+                hue = 0;
+            }
+            // if Brightness is turned off, then everything is zero.
+            if (value <= 0)
+            {
+                red = green = blue = 0;
+            }
 
-                // At the here, we are converting 0 to 9 as directly to string, 
-                // But when we calculate and find 10 to 15, we are using ASCII 
-                // Table for decoding it. The default case for this process is 
-                // Uppercase. So we are adding 55 (additional case 10) to result
-                switch (remainder)
+            // if saturation is turned off, then there is no color/hue. it's grayscale.
+            else if (saturation <= 0)
+            {
+                red = green = blue = value;
+            }
+            else // if we got here, then there is a color to create.
+            {
+                double hf = hue / 60.0;
+                int i = (int)System.Math.Floor(hf);
+                double f = hf - i;
+                double pv = value * (1 - saturation);
+                double qv = value * (1 - saturation * f);
+                double tv = value * (1 - saturation * (1 - f));
+
+                switch (i)
                 {
+
+                    // Red Dominant
                     case 0:
+                        red = value;
+                        green = tv;
+                        blue = pv;
+                        break;
+
+                    // Green Dominant
                     case 1:
+                        red = qv;
+                        green = value;
+                        blue = pv;
+                        break;
                     case 2:
+                        red = pv;
+                        green = value;
+                        blue = tv;
+                        break;
+
+                    // Blue Dominant
                     case 3:
+                        red = pv;
+                        green = qv;
+                        blue = value;
+                        break;
                     case 4:
+                        red = tv;
+                        green = pv;
+                        blue = value;
+                        break;
+
+                    // Red Red Dominant
                     case 5:
+                        red = value;
+                        green = pv;
+                        blue = qv;
+                        break;
+
+                    // In case the math is out of bounds, this is a fix.
                     case 6:
-                    case 7:
-                    case 8:
-                    case 9:
-                        result = remainder.ToString() + result;
+                        red = value;
+                        green = tv;
+                        blue = pv;
                         break;
-                    case 10:
-                    case 11:
-                    case 12:
-                    case 13:
-                    case 14:
-                    case 15:
-                        result = ((char)(remainder + 55)).ToString() + result;
+                    case -1:
+                        red = value;
+                        green = pv;
+                        blue = qv;
                         break;
+
+                    // If the color is not defined, go grayscale
                     default:
+                        red = green = blue = value;
                         break;
                 }
             }
 
-            // Return calculated result to caller
-            return result;
+            RGBRed.DutyCycle = Clamp(red);
+            RGBGreen.DutyCycle = Clamp(green);
+            RGBBlue.DutyCycle = Clamp(blue);
         }
+
+        public static double Clamp(double index)
+        {
+            if (index < 0) return 0;
+            if (index > 1) return 1;
+            return index;
+        }
+
+        public static void Transformation(SColorbook source, SColorbook target, int divider, int sleep)
+        {
+            SColorbook effect = new SColorbook(
+                (target.Red - source.Red) / divider,
+                (target.Green - source.Green) / divider,
+                (target.Blue - source.Blue) / divider,
+                (target.Hue - source.Hue) / divider,
+                (target.Saturation - source.Saturation) / divider,
+                (target.Value - source.Value) / divider
+                );
+
+            double red = source.Red;
+            double green = source.Green;
+            double blue = source.Blue;
+            double hue = source.Hue;
+            double saturation = source.Saturation;
+            double value = source.Value;
+
+            Blink(hue, saturation, value, red, green, blue);
+            for (int index = 0; index < divider; index++)
+            {
+                red = red + effect.Red;
+                green = green + effect.Green;
+                blue = blue + effect.Blue;
+                hue = hue + effect.Hue;
+                saturation = saturation + effect.Saturation;
+                value = value + effect.Value;
+
+                Blink(hue, saturation, value, red, green, blue);
+                Thread.Sleep(sleep);
+            }
+        }
+
+        #endregion
     }
 }
