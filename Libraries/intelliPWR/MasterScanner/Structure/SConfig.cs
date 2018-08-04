@@ -2,7 +2,7 @@ namespace intelliPWR.MasterScanner
 {
     public class SConfig : IConfig
     {
-        private ushort clockSpeed = 0;
+        private ushort clockSpeed = 100;
         public ushort ClockSpeed
         {
             get
@@ -16,7 +16,7 @@ namespace intelliPWR.MasterScanner
             }
         }
 
-        private ushort retryCount = 0;
+        private ushort retryCount = 3;
         public ushort RetryCount
         {
             get
@@ -30,7 +30,7 @@ namespace intelliPWR.MasterScanner
             }
         }
 
-        private ushort timeout = 0;
+        private ushort timeout = 100;
         public ushort Timeout
         {
             get
