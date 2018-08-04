@@ -2,9 +2,9 @@
 {
     public interface IDevice
     {
-        byte Address { get; set; }
-        SFunctionArray Function { get; set; }
-        EHandshake Handshake { get; set; }
-        SVendor Vendor { get; set; }
+        byte Address { get; }
+        SFunctionArray Function { get; }
+        EHandshake Handshake { get; }
+        SVendor Vendor { get; }
     }
 }
