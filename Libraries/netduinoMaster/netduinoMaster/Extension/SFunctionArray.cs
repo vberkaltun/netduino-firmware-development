@@ -113,7 +113,7 @@ namespace netduinoMaster
         }
 
         /// <summary>
-        /// Core of enqueue, fill and given Function to given target.
+        /// Core of enqueue, fill a given source to given target.
         /// </summary>
         /// <param name="Function">The Function object.</param>
         /// <param name="target">The object will fill to target.</param>

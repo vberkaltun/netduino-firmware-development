@@ -20,7 +20,7 @@ namespace netduinoMaster
             }
         }
 
-        #region Public
+        #region Function
 
         /// <summary>
         /// Removes all objects from the Queue.
@@ -113,7 +113,7 @@ namespace netduinoMaster
         }
 
         /// <summary>
-        /// Core of enqueue, fill and given source to given target.
+        /// Core of enqueue, fill a given source to given target.
         /// </summary>
         /// <param name="source">The source object.</param>
         /// <param name="target">The object will fill to target.</param>
