@@ -38,9 +38,11 @@
     <Compile Include="Constant.cs" />
     <Compile Include="Enumeration.cs" />
     <Compile Include="Extension\SStringArray.cs" />
-    <Compile Include="Interface\IVendor.cs" />
+    <Compile Include="Interface\IColorbook.cs" />
     <Compile Include="Interface\IDevice.cs" />
     <Compile Include="Interface\IFunction.cs" />
+    <Compile Include="Interface\IVendor.cs" />
+    <Compile Include="Structure\SColorbook.cs" />
     <Compile Include="Structure\SFunction.cs" />
     <Compile Include="Structure\SDevice.cs" />
     <Compile Include="Structure\SVendor.cs" />
@@ -66,4 +68,5 @@
     <Reference Include="System" />
     <Reference Include="GoBus" />
   </ItemGroup>
+  <ItemGroup />
 </Project>
