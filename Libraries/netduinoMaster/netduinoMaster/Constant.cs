@@ -25,8 +25,9 @@ namespace netduinoMaster
         // Subslave of slave device. At the here, we do not need to scan all
         // These device on the bus. In any case, slave device will scan their
         // Own slave device on the bus
-        protected const byte I2C_BUS_SDA = 5;
-        protected const byte I2C_BUS_SCL = 4;
+        protected const byte I2C_BUS_CLOCKRATE = 100;
+        protected const byte I2C_BUS_TIMEOUT = 100;
+        protected const byte I2C_BUS_ENDOFLINE = 255;
         protected const byte I2C_START_ADDRESS = 0x20;
         protected const byte I2C_STOP_ADDRESS = 0x65;
 
@@ -41,12 +42,6 @@ namespace netduinoMaster
         // Than 32 bit. you can upgrade and speed up your buffers
         protected const byte BUFFER_SIZE = 32;
 
-        // IMPORTANT NOTICE: If buffer size is not looking enough for you, 
-        // You can extend or shrink your data with this variable. Due to lack 
-        // Of resources on memory, we were setted it as 8 but if you have more 
-        // Memory on your device, bigger value can be compatible
-        protected const byte MINIMIZED_BUFFER_SIZE = 16;
-
         // Outside and Inside protocol delimiters
         protected const string PROTOCOL_DELIMITERS = "";
         protected const char DATA_DELIMITER = '';
@@ -56,8 +51,7 @@ namespace netduinoMaster
         protected const char IDLE_MULTI_START = '';
         protected const char IDLE_MULTI_END = '';
 
-        // RGB led pins and solid state relay pin, additional frequency
-        protected static readonly ushort BLINK_FREQUENCY = 100;
+        // RGB led pins and solid state relay pin
         protected static readonly PWMChannel BLINK_R = PWMChannels.PWM_PIN_D9;
         protected static readonly PWMChannel BLINK_GB = PWMChannels.PWM_PIN_D10;
         protected static readonly PWMChannel SSR = PWMChannels.PWM_PIN_D11;
