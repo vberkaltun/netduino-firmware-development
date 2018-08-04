@@ -9,11 +9,6 @@ namespace netduinoMaster
             {
                 return vendor;
             }
-
-            set
-            {
-                vendor = value;
-            }
         }
 
         private SFunctionArray function = new SFunctionArray();
@@ -22,11 +17,6 @@ namespace netduinoMaster
             get
             {
                 return function;
-            }
-
-            set
-            {
-                function = value;
             }
         }
 
@@ -37,11 +27,6 @@ namespace netduinoMaster
             {
                 return handshake;
             }
-
-            set
-            {
-                handshake = value;
-            }
         }
 
         private byte address = 0;
@@ -51,11 +36,6 @@ namespace netduinoMaster
             {
                 return address;
             }
-
-            set
-            {
-                address = value;
-            }
         }
 
         #region Constructor
@@ -64,18 +44,10 @@ namespace netduinoMaster
 
         public SDevice(SVendor vendor, SFunctionArray function, EHandshake handshake, byte address)
         {
-            Vendor.Brand = vendor.Brand;
-            Vendor.Model = vendor.Model;
-            Vendor.Version = vendor.Version;
-
-            // Clone main data and after resize it
-            Function = function;
-
-            //for (int index = 0; index < function.Length; index++)
-            //    Function[index].Fill(function[index]);
-
-            Handshake = handshake;
-            Address = address;
+            this.vendor = new SVendor(vendor.Brand, vendor.Model, vendor.Version);
+            this.function = function;
+            this.handshake = handshake;
+            this.address = address;
         }
 
         #endregion
