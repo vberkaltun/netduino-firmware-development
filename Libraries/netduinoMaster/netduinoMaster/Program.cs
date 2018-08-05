@@ -630,5 +630,51 @@ namespace netduinoMaster
         }
 
         #endregion
+
+        #region Alphanumeric
+
+        private static bool IsAlphanumeric(string data)
+        {
+            if (data == null)
+                return false;
+
+            // Decrease comparing options, looking good
+            data = data.ToUpper();
+
+            // Check function ID, type is alphanumeric
+            for (ushort index = 0; index < data.Length; index++)
+                if (!(IsAlpha(data) || IsNumeric(data)))
+                    return false;
+
+            return true;
+        }
+
+        private static bool IsNumeric(string data)
+        {
+            if (data == null)
+                return false;
+
+            // Check function ID, type is numeric
+            for (ushort index = 0; index < data.Length; index++)
+                if (data[index] < '0' || data[index] > '9')
+                    return false;
+
+            return true;
+        }
+
+        private static bool IsAlpha(string data)
+        {
+            if (data == null)
+                return false;
+
+            // Check function ID, type is alpha
+            for (ushort index = 0; index < data.Length; index++)
+                if (data[index] < 'A' || data[index] > 'Z')
+                    return false;
+
+            return true;
+        }
+
+        #endregion
     }
 }
