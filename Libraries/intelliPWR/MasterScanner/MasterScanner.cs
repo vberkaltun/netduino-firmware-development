@@ -37,8 +37,19 @@ namespace intelliPWR.MasterScanner
     {
         #region Variable
 
-        protected I2CDevice.Configuration Configuration;
-        protected I2CDevice Device;
+        private I2CDevice.Configuration configuration;
+        public I2CDevice.Configuration Configuration
+        {
+            get
+            {
+                return configuration;
+            }
+
+            set
+            {
+                configuration = value;
+            }
+        }
 
         protected SSlave Slave;
         protected SConfig Config;
@@ -122,8 +133,6 @@ namespace intelliPWR.MasterScanner
         protected void Initialize(byte startAddress, byte stopAddress, ushort clockSpeed, ushort timeout, ushort retryCount)
         {
             Configuration = new I2CDevice.Configuration(0, clockSpeed);
-            Device = new I2CDevice(Configuration);
-
             Slave = new SSlave(startAddress, stopAddress);
             Config = new SConfig(clockSpeed, retryCount, timeout);
         }
@@ -186,7 +195,7 @@ namespace intelliPWR.MasterScanner
 
         #region Public
 
-        public void ScanSlaves()
+        public void ScanSlaves(I2CDevice Device)
         {
             // That is looking worst but it is very easy solution for up-to-date
             // Scanning process. In scanning step, we will detect last changes
