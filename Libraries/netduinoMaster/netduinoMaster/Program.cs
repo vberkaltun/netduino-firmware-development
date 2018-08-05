@@ -402,17 +402,7 @@ namespace netduinoMaster
                     while (I2C.Execute(transaction, I2C_BUS_TIMEOUT) != handshake.Length)
                         if (retryCount++ > I2C_BUS_RETRY)
                             throw new Exception();
-
-                    // Maybe not need, right?
-                    Thread.Sleep(15);
                 }
-
-                // IMPORTANT NOTICE: Due to decoding of slave device, we need to Wait
-                // A little bit. Otherwise, Master device will request data From slave
-                // Device too early and slave cannot send it. Additional, when more
-                // Devices are connected, we need to downgrade delay time. Already,
-                // It will take the same time during roaming
-                Thread.Sleep(100);
 
                 // If everything goes well, we will arrive here and return true
                 return true;
@@ -452,9 +442,6 @@ namespace netduinoMaster
                         break;
                     output = output + (char)item;
                 }
-
-                // Maybe not need, right?
-                Thread.Sleep(15);
 
                 // Decode last given data
                 if (!Decode(output))

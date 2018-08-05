@@ -27,7 +27,7 @@ namespace netduinoMaster
         // Own slave device on the bus
         protected const byte I2C_BUS_CLOCKRATE = 100;
         protected const byte I2C_BUS_TIMEOUT = 100;
-        protected const byte I2C_BUS_RETRY = 1;
+        protected const byte I2C_BUS_RETRY = 3;
         protected const byte I2C_BUS_ENDOFLINE = 255;
         protected const byte I2C_START_ADDRESS = 0x20;
         protected const byte I2C_STOP_ADDRESS = 0x77;
