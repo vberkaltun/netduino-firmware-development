@@ -92,6 +92,7 @@ namespace intelliPWR.MasterScanner
             // Initialize for first run
             Initialize(DEFAULT_START_ADDRESS, DEFAULT_STOP_ADDRESS, clockSpeed, timeout, retryCount);
         }
+
         /// <summary>
         /// Default constructor with startAddress, stopAddress, clockSpeed, timeout and retryCount parameters.
         /// </summary>
@@ -124,7 +125,7 @@ namespace intelliPWR.MasterScanner
             Device = new I2CDevice(Configuration);
 
             Slave = new SSlave(startAddress, stopAddress);
-            Config = new SConfig(clockSpeed, timeout, retryCount);
+            Config = new SConfig(clockSpeed, retryCount, timeout);
         }
 
         /// <summary>
@@ -239,7 +240,6 @@ namespace intelliPWR.MasterScanner
             // Disposing our device for next process and reinitializing it. When
             // We choose to not to do that all process about scanning will stop 
             // In next step. We experienced this situation at before
-            Device.Dispose();
             Configuration = new I2CDevice.Configuration(0, Config.ClockSpeed);
             Device = new I2CDevice(Configuration);
 
@@ -249,7 +249,7 @@ namespace intelliPWR.MasterScanner
 
         public bool SetRange(byte startAddress, byte stopAddress)
         {
-            return Slave.SetRange(startAddress,stopAddress);
+            return Slave.SetRange(startAddress, stopAddress);
         }
 
         public void ResetRange()
