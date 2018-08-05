@@ -142,20 +142,20 @@ namespace intelliPWR.MasterScanner
         /// </summary>
         /// <param name="array">An array of connected device list.</param>
         /// <param name="count">Size of connected device.</param>
-        protected void OnTriggeredConnected(string data)
+        protected void OnTriggeredConnected(byte[] data, byte count)
         {
             if (data != null)
             {
                 // We are passing here our data as a string type data but that 
                 // Is not acceptable for end-user. So we will trim it with space
                 // And after that will store this data in an string array
-                string[] connectedOutput = data.Trim().Split(' ');
+                byte[] connectedOutput = new byte[count];
+                for (int index = 0; index < count; index++)
+                    connectedOutput[index] = data[index];
 
                 // don't bother if user hasn't registered a callback
-                if (OnConnected == null)
-                    return;
-
-                OnConnected(connectedOutput, (byte)connectedOutput.Length);
+                if (OnConnected != null)
+                    OnConnected(connectedOutput, (byte)connectedOutput.Length);
 
                 //Debug.Print("=== OnConnected");
 
@@ -169,20 +169,20 @@ namespace intelliPWR.MasterScanner
         /// </summary>
         /// <param name="array">An array of disconnected device list.</param>
         /// <param name="count">Size of disconnected device.</param>
-        protected void OnTriggeredDisconnected(string data)
+        protected void OnTriggeredDisconnected(byte[] data, byte count)
         {
             if (data != null)
             {
                 // We are passing here our data as a string type data but that 
                 // Is not acceptable for end-user. So we will trim it with space
                 // And after that will store this data in an string array
-                string[] disconnectedOutput = data.Trim().Split(' ');
+                byte[] disconnectedOutput = new byte[count];
+                for (int index = 0; index < count; index++)
+                    disconnectedOutput[index] = data[index];
 
                 // don't bother if user hasn't registered a callback
-                if (OnDisconnected == null)
-                    return;
-
-                OnDisconnected(disconnectedOutput, (byte)disconnectedOutput.Length);
+                if (OnDisconnected != null)
+                    OnDisconnected(disconnectedOutput, (byte)disconnectedOutput.Length);
 
                 //Debug.Print("=== OnDisconnected");
 
@@ -202,8 +202,10 @@ namespace intelliPWR.MasterScanner
             // On I2C bus and will put last changed to here as connected or not.
             // After that, we will trim and split it with space delimiter.
             // So, we can generate up-to-date output I2C data's
-            string currentConnectedSlavesArray = null;
-            string currentDisconnectedSlavesArray = null;
+            byte[] currentConnectedSlavesArray = new byte[DEFAULT_DEVICE_MAX];
+            byte currentConnectedSlavesCount = 0;
+            byte[] currentDisconnectedSlavesArray = new byte[DEFAULT_DEVICE_MAX];
+            byte currentDisconnectedSlavesCount = 0;
 
             // Start to scanning slave device on I2C bus
             for (byte address = Slave.StartAddress; address < Slave.StopAddress; address++)
@@ -220,13 +222,13 @@ namespace intelliPWR.MasterScanner
 
                     // When retry is overflowed, abort it to worst case
                     while (Device.Execute(transaction, Config.Timeout) != handshake.Length)
-                        if (retryCount++ >= Config.RetryCount)
+                        if (retryCount++ > Config.RetryCount)
                             throw new Exception();
 
                     // Check that is it connected as before or not
                     if (Slave.ConnectedSlavesArray[address] == false)
                     {
-                        currentConnectedSlavesArray += " " + address.ToString();
+                        currentConnectedSlavesArray[currentConnectedSlavesCount++] = address;
                         Slave.ConnectedSlavesArray[address] = true;
                     }
                 }
@@ -235,15 +237,18 @@ namespace intelliPWR.MasterScanner
                     // Check that is it disconnected as before or not
                     if (Slave.ConnectedSlavesArray[address] == true)
                     {
-                        currentDisconnectedSlavesArray += " " + address.ToString();
+                        currentDisconnectedSlavesArray[currentDisconnectedSlavesCount++] = address;
                         Slave.ConnectedSlavesArray[address] = false;
                     }
                 }
             }
 
             // Notify end user with delegate method
-            OnTriggeredConnected(currentConnectedSlavesArray);
-            OnTriggeredDisconnected(currentDisconnectedSlavesArray);
+            if (currentConnectedSlavesCount != 0)
+                OnTriggeredConnected(currentConnectedSlavesArray, currentConnectedSlavesCount);
+
+            if (currentDisconnectedSlavesCount != 0)
+                OnTriggeredDisconnected(currentDisconnectedSlavesArray, currentDisconnectedSlavesCount);
 
             // Issue 53 - Recommendation by NevynUK. At the here, we are 
             // Disposing our device for next process and reinitializing it. When
