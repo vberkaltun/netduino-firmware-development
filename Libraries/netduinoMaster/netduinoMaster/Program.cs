@@ -44,9 +44,9 @@ namespace netduinoMaster
         public static void Main()
         {
             // Show device info, not necessary
-            Debug.Print(DEVICE_BRAND);
-            Debug.Print(DEVICE_MODEL);
-            Debug.Print(DEVICE_VERSION);
+            Debug.Print("DEVICE_BRAND: " + DEVICE_BRAND);
+            Debug.Print("DEVICE_MODEL: " + DEVICE_MODEL);
+            Debug.Print("DEVICE_VERSION: " + DEVICE_VERSION);
 
             // Function list of master scanner, do not change
             Master.Enqueue("getVendors");
