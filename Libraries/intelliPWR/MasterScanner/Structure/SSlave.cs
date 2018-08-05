@@ -2,7 +2,7 @@ namespace intelliPWR.MasterScanner
 {
     public class SSlave : Constant, ISlave
     {
-        private byte startAddress = 0;
+        private byte startAddress = DEFAULT_START_ADDRESS;
         public byte StartAddress
         {
             get
@@ -16,7 +16,7 @@ namespace intelliPWR.MasterScanner
             }
         }
 
-        private byte stopAddress = 0;
+        private byte stopAddress = DEFAULT_STOP_ADDRESS;
         public byte StopAddress
         {
             get
@@ -30,7 +30,7 @@ namespace intelliPWR.MasterScanner
             }
         }
 
-        private bool[] connectedSlavesArray = new bool[127];
+        private bool[] connectedSlavesArray = new bool[DEFAULT_DEVICE_MAX];
         public bool[] ConnectedSlavesArray
         {
             get
@@ -44,7 +44,7 @@ namespace intelliPWR.MasterScanner
             }
         }
 
-        private byte connectedSlavesCount = 0;
+        private byte connectedSlavesCount = DEFAULT_DEVICE_MIN;
         public byte ConnectedSlavesCount
         {
             get
