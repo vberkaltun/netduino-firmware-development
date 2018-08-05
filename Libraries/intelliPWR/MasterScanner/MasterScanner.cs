@@ -241,7 +241,7 @@ namespace intelliPWR.MasterScanner
             // We choose to not to do that all process about scanning will stop 
             // In next step. We experienced this situation at before
             Configuration = new I2CDevice.Configuration(0, Config.ClockSpeed);
-            Device = new I2CDevice(Configuration);
+            Device.Config = Configuration;
 
             //Debug.EnableGCMessages(true);
             //Debug.Print(Debug.GC(false).ToString());        
