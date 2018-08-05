@@ -22,23 +22,20 @@ namespace netduinoMaster
         static SColorbook ColorBlue = new SColorbook(0, 204, 204, 180, 1, 0.8);
         static SColorbook ColorOrange = new SColorbook(255, 128, 0, 30, 1, 1);
 
-        static MasterScanner Scanner = new MasterScanner(I2C_START_ADDRESS, I2C_STOP_ADDRESS);
+        static MasterScanner Scanner = new MasterScanner(100, 100, 1);
         static Serializer Serializer = new Serializer();
-
-        static Timer TimerI2C = null;
-        static Timer TimerFunction = null;
-        static Timer TimerWiFi = null;
-        static TimerCallback Callback = null;
 
         static ECommunication Communication = ECommunication.Idle;
         static ENotify Notify = ENotify.Offline;
 
-        static SDeviceArray Device = new SDeviceArray();
+        static SStringArray Master = new SStringArray();
+        static SDeviceArray Slave = new SDeviceArray();
+
         static SStringArray Transmit = new SStringArray();
         static string Receive = null;
 
-        static I2CDevice.Configuration Configuration;
-        static I2CDevice I2C;
+        static I2CDevice.Configuration Configuration = new I2CDevice.Configuration(0, I2C_BUS_CLOCKRATE);
+        static I2CDevice I2C = new I2CDevice(Configuration);
 
         #endregion
 
@@ -46,6 +43,15 @@ namespace netduinoMaster
 
         public static void Main()
         {
+            // Show device info, not necessary
+            Debug.Print(DEVICE_BRAND);
+            Debug.Print(DEVICE_MODEL);
+            Debug.Print(DEVICE_VERSION);
+
+            // Function list of master scanner, do not change
+            Master.Enqueue("getVendors");
+            Master.Enqueue("getFunctionList");
+
             // Start Pulse-Width Modulation of led operation
             RGBRed.Start();
             RGBGreen.Start();
@@ -57,21 +63,26 @@ namespace netduinoMaster
             Scanner.OnConnected = OnConnected;
             Scanner.OnDisconnected = OnDisconnected;
 
-            // Attach functions to lib and after run main lib
-            Callback = new TimerCallback(OnCallback);
-            TimerI2C = new Timer(Callback, ETimer.I2C, 0, 1000);
-            TimerFunction = new Timer(Callback, ETimer.Function, 0, 500);
-            TimerWiFi = new Timer(Callback, ETimer.WiFi, 0, 2000);
+            //// Calling the Thread. Sleep method causes the current thread to 
+            //// Immediately block for the number of milliseconds or the time interval
+            //// You pass to the method, and yields the remainder of its time 
+            //// Slice to another thread
 
-            // Calling the Thread.Sleep method causes the current thread to 
-            // Immediately block for the number of milliseconds or the time interval
-            // You pass to the method, and yields the remainder of its time 
-            // Slice to another thread
-            Thread.Sleep(Timeout.Infinite);
+            //OnConnected(new byte[1] { 64 }, 1);
+            while (true)
+            {
+                Scanner.ScanSlaves(I2C);
+                Thread.Sleep(250);
+                listenFunction();
+                Thread.Sleep(250);
+            }
         }
 
-        public static void UnknownEvent()
+        private static void UnknownEvent()
         {
+            // Cross check, maybe it is returned as null
+            Receive = Receive + " ";
+
             // Notify user
             Debug.Print("Error! Unexpected <" + Receive + ">[" + Receive.Length.ToString() + "] data received.");
 
@@ -83,7 +94,7 @@ namespace netduinoMaster
             Receive = null;
         }
 
-        public static string GenerateHexadecimal(byte data)
+        private static string GenerateHexadecimal(byte data)
         {
             string result = null;
             byte division = data;
@@ -132,7 +143,7 @@ namespace netduinoMaster
 
         #region Trigger
 
-        private static void OnCallback(object state)
+        private static void OnConnected(byte[] array, byte count)
         {
             // IMPORTANT NOTICE: As you can see, we do not use delay function
             // In all lib. Delay function is a non-blocking function in Arduino
@@ -445,7 +456,7 @@ namespace netduinoMaster
 
         #region RGB
 
-        public static void HSVToRGB(double hue, double saturation, double value, double red, double green, double blue)
+        private static void HSVToRGB(double hue, double saturation, double value, double red, double green, double blue)
         {
             // hue parameter checking/fixing
             if (hue < 0 || hue >= 360)
@@ -537,14 +548,14 @@ namespace netduinoMaster
             RGBBlue.DutyCycle = ClampRGB(blue);
         }
 
-        public static double ClampRGB(double index)
+        private static double ClampRGB(double index)
         {
             if (index < 0) return 0;
             if (index > 1) return 1;
             return index;
         }
 
-        public static void ChangeRGBStatus(SColorbook source, SColorbook target, int divider, int sleep)
+        private static void ChangeRGBStatus(SColorbook source, SColorbook target, int divider, int sleep)
         {
             SColorbook effect = new SColorbook(
                 (target.Red - source.Red) / divider,
@@ -577,7 +588,7 @@ namespace netduinoMaster
             }
         }
 
-        public static void SetRGBStatus(ENotify status)
+        private static void SetRGBStatus(ENotify status)
         {
             switch (status)
             {
@@ -621,9 +632,6 @@ namespace netduinoMaster
                 default:
                     break;
             }
-
-            // Wait for 2.5 second, otherwise it can be blocked by next process
-            Thread.Sleep(2500);
 
             // Do not forget to set RGB status
             Notify = status;
