@@ -56,5 +56,8 @@ namespace netduinoMaster
         protected static readonly PWMChannel BLINK_R = PWMChannels.PWM_PIN_D9;
         protected static readonly PWMChannel BLINK_GB = PWMChannels.PWM_PIN_D10;
         protected static readonly PWMChannel SSR = PWMChannels.PWM_PIN_D11;
+
+        protected const byte DEFAULT_DEVICE_MAX = byte.MaxValue;
+        protected const byte DEFAULT_DEVICE_MIN = byte.MinValue;
     }
 }
