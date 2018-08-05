@@ -19,6 +19,7 @@ namespace netduinoMaster
         static PWM RGBRed = new PWM(PWMChannels.PWM_PIN_D11, 100, 0, true);
         static PWM RGBGreen = new PWM(PWMChannels.PWM_PIN_D10, 100, 0, true);
         static PWM RGBBlue = new PWM(PWMChannels.PWM_PIN_D9, 100, 0, true);
+        static OutputPort SSR = new OutputPort(Pins.ONBOARD_LED, true);
 
         static SColorbook ColorBlack = new SColorbook(0, 0, 0, 0, 0, 0);
         static SColorbook ColorWhite = new SColorbook(255, 255, 255, 0, 0, 1);
@@ -68,6 +69,7 @@ namespace netduinoMaster
             // Which one is to be triggered
             Scanner.OnConnected = OnConnected;
             Scanner.OnDisconnected = OnDisconnected;
+            NetduinoMQTT.OnReceived = OnReceived;
 
             // Attach functions to lib and after run main lib
             Callback = new TimerCallback(OnCallback);
@@ -160,14 +162,21 @@ namespace netduinoMaster
             {
                 Socket.Connect(new IPEndPoint(hostEntry.AddressList[0], MQTT_PORT));
                 Debug.Print("Done! Connection was established successfully.");
+
+                if (NetduinoMQTT.ConnectMQTT(Socket, DEVICE_MODEL, 20, true, MQTT_USER, MQTT_PASSWORD) != 0)
+                    Debug.Print("Error! Unexpected connection error triggered.");
+
+                // IMPORTANT NOTICE: First of all, we need to subscribe main device
+                // We call it like XXXX/status and this broker is related with SSR
+                // State of device. We will listen something about this and execute it
+                string[] data = { DEVICE_MODEL, "status" };
+                string result = '/' + Serializer.Encode(new char[1] { '/' }, data);
+                NetduinoMQTT.SubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
             }
             catch (SocketException error)
             {
                 Debug.Print("Error! Unexpected connection error <" + error.ErrorCode + "> triggered.");
             }
-
-            if (NetduinoMQTT.ConnectMQTT(Socket, "tester402", 20, true, MQTT_USER, MQTT_PASSWORD) != 0)
-                Debug.Print("Error! Unexpected connection error triggered.");
         }
 
         #endregion
@@ -337,26 +346,15 @@ namespace netduinoMaster
                 {
                     string convertedAddress = "0x" + GenerateHexadecimal(address);
                     string[] topicList = { "isConnected", "brand", "model", "version" };
-                    string[] messageList = { type.ToString(), Slave[index].Vendor.Brand, Slave[index].Vendor.Model, Slave[index].Vendor.Version };
+                    string[] messageList = { type ? "1" : "0", Slave[index].Vendor.Brand, Slave[index].Vendor.Model, Slave[index].Vendor.Version };
 
                     for (int iterator = 0; iterator < topicList.Length; iterator++)
                     {
                         string[] data = { convertedAddress, topicList[iterator] };
                         string result = '/' + Serializer.Encode('/', data);
 
-                        if (iterator == 0)
-                        {
-                            if (type)
-                                NetduinoMQTT.SubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
-                            else
-                                NetduinoMQTT.UnsubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
-
+                        if (type || iterator == 0)
                             NetduinoMQTT.PublishMQTT(Socket, result, messageList[iterator]);
-                        }
-                        else {
-                            if (type)
-                                NetduinoMQTT.PublishMQTT(Socket, result, messageList[iterator]);
-                        }
                     }
 
                     // -----
@@ -383,6 +381,43 @@ namespace netduinoMaster
 
             // Worst case, when not find anything we will arrive there
             return false;
+        }
+
+        private static void OnReceived(string topic, string payload)
+        {
+            // Print out some debugging info
+            Debug.Print("Done! Callback updated on <" + topic + ">[" + payload + "].");
+
+            // Generate a delimiter data and use in with decoding function
+            string[] data = Serializer.Decode(new char[] { '/', '/' }, topic);
+
+            // Null operator check
+            if (data != null)
+            {
+                // IMPORTANT NOTICE: If we can arrive there, that's mean the payload
+                // Data is consisted of status data. Otherwise, we can say the payload
+                // Data is not consisted of status data. Worst case, Go other state
+                // Of if, that's mean also it is a function data(s)
+                if (data[0] == DEVICE_MODEL)
+                    SSR.Write(payload[0] == '1' ? true : false);
+                else
+                {
+                    // Compare internal data(s) with registered function list
+                    for (ushort index = 0; index < Slave.Length; index++)
+                    {
+                        // Store device name at the here, we can not use it directly
+                        string convertedAddress = "0x" + GenerateHexadecimal(Slave[index].Address);
+
+                        // Check that is it same or not
+                        if (data[0] != convertedAddress)
+                            continue;
+
+                        // Write internal data list to connected device, one-by-one
+                        string result = Serializer.Encode(DATA_DELIMITER, new string[2] { data[1], payload });
+                        Write(Slave[index].Address, result);
+                    }
+                }
+            }
         }
 
         #endregion

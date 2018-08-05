@@ -35,8 +35,7 @@ namespace netduinoMaster
     /// <summary>
     /// Delegate that defines event handler for received MQTT.
     /// </summary>
-    /// <param name="data">An array of received device list.</param>
-    public delegate void ReceivedEventHandler(string data);
+    public delegate void ReceivedEventHandler(string topic, string payload);
 
     public static class NetduinoMQTT
     {
@@ -465,7 +464,6 @@ namespace netduinoMaster
             // Start of Variable header
             // Message ID
             messageID = Rand.Next(MAX_MESSAGEID);
-            Debug.Print("Done! SUBSCRIBE message ID <" + messageID + "> received.");
             buffer[messageIndex++] = (byte)(messageID / 256); // Length MSB
             buffer[messageIndex++] = (byte)(messageID % 256); // Length LSB
             // End of variable header
@@ -568,7 +566,6 @@ namespace netduinoMaster
             // Start of Variable header
             // Message ID
             messageID = Rand.Next(MAX_MESSAGEID);
-            Debug.Print("Done! UNSUBSCRIBE message ID <" + messageID + "> received.");
             buffer[messageIndex++] = (byte)(messageID / 256); // Length MSB
             buffer[messageIndex++] = (byte)(messageID % 256); // Length LSB
             // End of variable header
@@ -782,12 +779,10 @@ namespace netduinoMaster
                 return ERROR;
             messageID += buffer[index++] * 256;
             messageID += buffer[index++];
-            Debug.Print("Done! SUBACK message received at <" + messageID + "> ID.");
             do
             {
                 QoS = new int[remainingLength - 2];
                 QoS[QoSIndex++] = buffer[index++];
-                Debug.Print("Done! SUBACK QoS was granted as <" + QoS[QoSIndex - 1] + "> QoS.");
             } while (index < remainingLength);
             return SUCCESS;
         }
@@ -824,21 +819,18 @@ namespace netduinoMaster
             {
                 messageID += buffer[index++] * 256;
                 messageID += buffer[index++];
-                Debug.Print("Done! PUBLISH message ID <" + messageID + "> received.");
             }
             topicstring = new string(Encoding.UTF8.GetChars(topic));
-            Debug.Print("Done! PUBLISH topic <" + topicstring + "> received.");
             payload = new byte[remainingLength - index];
             while (index < remainingLength)
                 payload[payloadIndex++] = buffer[index++];
 
             // This doesn't work if the payload isn't UTF8
             payloadstring = new string(Encoding.UTF8.GetChars(payload));
-            Debug.Print("Done! PUBLISH payload <" + payloadstring + ">[" + payload.Length + "] received from port.");
 
             // don't bother if user hasn't registered a callback
             if (OnReceived != null)
-                OnReceived(payloadstring);
+                OnReceived(topicstring, payloadstring);
 
             return SUCCESS;
         }
@@ -854,7 +846,6 @@ namespace netduinoMaster
                 return ERROR;
             messageID += buffer[1] * 256;
             messageID += buffer[2];
-            Debug.Print("Done! UNSUBACK message ID <" + messageID + "> received.");
             return SUCCESS;
         }
 
@@ -862,7 +853,6 @@ namespace netduinoMaster
         public static int HandlePINGRESP(Socket socket, byte firstByte)
         {
             int returnCode = 0;
-            Debug.Print("Done! Ping response received.");
             byte[] buffer = new byte[1];
             returnCode = socket.Receive(buffer, 0);
             if ((buffer[0] != 0) || (returnCode != 1))
@@ -908,7 +898,6 @@ namespace netduinoMaster
                 return ERROR;
             messageID += buffer[1] * 256;
             messageID += buffer[2];
-            Debug.Print("Done! PUBACK message ID <" + messageID + "> received.");
             return SUCCESS;
         }
 
