@@ -27,9 +27,10 @@ namespace netduinoMaster
         // Own slave device on the bus
         protected const byte I2C_BUS_CLOCKRATE = 100;
         protected const byte I2C_BUS_TIMEOUT = 100;
+        protected const byte I2C_BUS_RETRY = 1;
         protected const byte I2C_BUS_ENDOFLINE = 255;
         protected const byte I2C_START_ADDRESS = 0x20;
-        protected const byte I2C_STOP_ADDRESS = 0x65;
+        protected const byte I2C_STOP_ADDRESS = 0x77;
 
         // IMPORTANT NOTICE: On I2C bus, You can send up to 32 bits on
         // Each transmission. Therefore, if there is more data than 32 bits
