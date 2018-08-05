@@ -52,7 +52,7 @@ namespace netduinoMaster
         protected const char IDLE_MULTI_END = '';
 
         // RGB led pins and solid state relay pin
-        protected const ushort BLINK_CLOCKRATE = 400;
+        protected const ushort BLINK_CLOCKRATE = 200;
         protected static readonly PWMChannel BLINK_R = PWMChannels.PWM_PIN_D9;
         protected static readonly PWMChannel BLINK_GB = PWMChannels.PWM_PIN_D10;
         protected static readonly PWMChannel SSR = PWMChannels.PWM_PIN_D11;
