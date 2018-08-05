@@ -37,20 +37,6 @@ namespace intelliPWR.MasterScanner
     {
         #region Variable
 
-        private I2CDevice.Configuration configuration;
-        public I2CDevice.Configuration Configuration
-        {
-            get
-            {
-                return configuration;
-            }
-
-            set
-            {
-                configuration = value;
-            }
-        }
-
         protected SSlave Slave;
         protected SConfig Config;
 
@@ -132,7 +118,6 @@ namespace intelliPWR.MasterScanner
         /// <param name="retryCount">Retry count for worst case operations.</param>
         protected void Initialize(byte startAddress, byte stopAddress, ushort clockSpeed, ushort timeout, ushort retryCount)
         {
-            Configuration = new I2CDevice.Configuration(0, clockSpeed);
             Slave = new SSlave(startAddress, stopAddress);
             Config = new SConfig(clockSpeed, retryCount, timeout);
         }
