@@ -2,8 +2,8 @@
 {
     public interface IFunction
     {
-        bool Listen { get; }
-        string Name { get; }
-        bool Request { get; }
+        bool Listen { get; set; }
+        string Name { get; set; }
+        bool Request { get; set; }
     }
 }

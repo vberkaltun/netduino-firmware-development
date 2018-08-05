@@ -9,6 +9,11 @@ namespace netduinoMaster
             {
                 return name;
             }
+
+            set
+            {
+                name = value;
+            }
         }
 
         private bool request = false;
@@ -17,6 +22,11 @@ namespace netduinoMaster
             get
             {
                 return request;
+            }
+
+            set
+            {
+                request = value;
             }
         }
 
@@ -27,6 +37,11 @@ namespace netduinoMaster
             {
                 return listen;
             }
+
+            set
+            {
+                listen = value;
+            }
         }
 
         #region Constructor
@@ -35,9 +50,9 @@ namespace netduinoMaster
 
         public SFunction(string name, bool request, bool listen)
         {
-            this.name = name;
-            this.request = request;
-            this.listen = listen;
+            this.Name = name;
+            this.Request = request;
+            this.Listen = listen;
         }
 
         #endregion

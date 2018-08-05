@@ -2,8 +2,8 @@
 {
     public interface IVendor
     {
-        string Brand { get; }
-        string Model { get; }
-        string Version { get; }
+        string Brand { get; set; }
+        string Model { get; set; }
+        string Version { get; set; }
     }
 }

@@ -9,6 +9,11 @@ namespace netduinoMaster
             {
                 return brand;
             }
+
+            set
+            {
+                brand = value;
+            }
         }
 
         private string model = null;
@@ -17,6 +22,11 @@ namespace netduinoMaster
             get
             {
                 return model;
+            }
+
+            set
+            {
+                model = value;
             }
         }
 
@@ -27,6 +37,11 @@ namespace netduinoMaster
             {
                 return version;
             }
+
+            set
+            {
+                version = value;
+            }
         }
 
         #region Constructor
@@ -35,9 +50,9 @@ namespace netduinoMaster
 
         public SVendor(string brand, string model, string version)
         {
-            this.brand = brand;
-            this.model = model;
-            this.version = version;
+            this.Brand = brand;
+            this.Model = model;
+            this.Version = version;
         }
 
         #endregion
