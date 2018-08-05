@@ -233,17 +233,7 @@ namespace intelliPWR.MasterScanner
                 OnTriggeredConnected(currentConnectedSlavesArray, currentConnectedSlavesCount);
 
             if (currentDisconnectedSlavesCount != 0)
-                OnTriggeredDisconnected(currentDisconnectedSlavesArray, currentDisconnectedSlavesCount);
-
-            // Issue 53 - Recommendation by NevynUK. At the here, we are 
-            // Disposing our device for next process and reinitializing it. When
-            // We choose to not to do that all process about scanning will stop 
-            // In next step. We experienced this situation at before
-            Configuration = new I2CDevice.Configuration(0, Config.ClockSpeed);
-            Device.Config = Configuration;
-
-            //Debug.EnableGCMessages(true);
-            //Debug.Print(Debug.GC(false).ToString());        
+                OnTriggeredDisconnected(currentDisconnectedSlavesArray, currentDisconnectedSlavesCount); 
         }
 
         public bool SetRange(byte startAddress, byte stopAddress)
