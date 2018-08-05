@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
+using Microsoft.SPOT.Net.NetworkInformation;
 using SecretLabs.NETMF.Hardware.Netduino;
 using intelliPWR.MasterScanner;
 using intelliPWR.Serializer;
@@ -22,7 +25,7 @@ namespace netduinoMaster
         static SColorbook ColorBlue = new SColorbook(0, 204, 204, 180, 1, 0.8);
         static SColorbook ColorOrange = new SColorbook(255, 128, 0, 30, 1, 1);
 
-        static MasterScanner Scanner = new MasterScanner(100, 100, 1);
+        static MasterScanner Scanner = new MasterScanner(I2C_BUS_CLOCKRATE, I2C_BUS_TIMEOUT, I2C_BUS_RETRY);
         static Serializer Serializer = new Serializer();
 
         static ECommunication Communication = ECommunication.Idle;
@@ -37,20 +40,23 @@ namespace netduinoMaster
         static I2CDevice.Configuration Configuration = new I2CDevice.Configuration(0, I2C_BUS_CLOCKRATE);
         static I2CDevice I2C = new I2CDevice(Configuration);
 
+        static Thread Thread;
+        static Socket Socket;
+
+        static TimerCallback Callback = null;
+        static Timer TimerBus = null;
+        static Timer TimerPing = null;
+
         #endregion
 
         #region Uncategorized
 
         public static void Main()
         {
-            // Show device info, not necessary
-            Debug.Print("DEVICE_BRAND: " + DEVICE_BRAND);
-            Debug.Print("DEVICE_MODEL: " + DEVICE_MODEL);
-            Debug.Print("DEVICE_VERSION: " + DEVICE_VERSION);
-
-            // Function list of master scanner, do not change
-            Master.Enqueue("getVendors");
-            Master.Enqueue("getFunctionList");
+            // Initialize device, do not remove
+            InitializeDevice();
+            InitializeNetwork();
+            InitializeMQTT();
 
             // Start Pulse-Width Modulation of led operation
             RGBRed.Start();
@@ -63,19 +69,20 @@ namespace netduinoMaster
             Scanner.OnConnected = OnConnected;
             Scanner.OnDisconnected = OnDisconnected;
 
-            //// Calling the Thread. Sleep method causes the current thread to 
-            //// Immediately block for the number of milliseconds or the time interval
-            //// You pass to the method, and yields the remainder of its time 
-            //// Slice to another thread
+            // Attach functions to lib and after run main lib
+            Callback = new TimerCallback(OnCallback);
+            TimerPing = new Timer(Callback, ETimer.Ping, 0, 2500);
+            TimerBus = new Timer(Callback, ETimer.Bus, 0, 500);
 
-            //OnConnected(new byte[1] { 64 }, 1);
-            while (true)
-            {
-                Scanner.ScanSlaves(I2C);
-                Thread.Sleep(250);
-                listenFunction();
-                Thread.Sleep(250);
-            }
+            // Setup and start a new thread for the listener
+            Thread = new Thread(ListenMQTT);
+            Thread.Start();
+
+            // Calling the Thread.Sleep method causes the current thread to 
+            // Immediately block for the number of milliseconds or the time interval
+            // You pass to the method, and yields the remainder of its time 
+            // Slice to another thread
+            Thread.Sleep(Timeout.Infinite);
         }
 
         private static void UnknownEvent()
@@ -94,54 +101,98 @@ namespace netduinoMaster
             Receive = null;
         }
 
-        private static string GenerateHexadecimal(byte data)
+        #endregion
+
+        #region Initialize
+
+        private static void InitializeDevice()
         {
-            string result = null;
-            byte division = data;
+            // Display network config for debugging
+            Debug.Print("Done! Device configuration was setted to system successfully.");
 
-            while (division != 0)
+            // Show device info, not necessary
+            Debug.Print("\t DEVICE BRAND: " + DEVICE_BRAND);
+            Debug.Print("\t DEVICE MODEL: " + DEVICE_MODEL);
+            Debug.Print("\t DEVICE VERSION: " + DEVICE_VERSION);
+            Debug.Print("\t ---");
+
+            // Function list of master scanner, do not change
+            Master.Enqueue("getVendors");
+            Master.Enqueue("getFunctionList");
+        }
+
+        private static void InitializeNetwork()
+        {
+            // Wait for Network address if DHCP
+            NetworkInterface Network = NetworkInterface.GetAllNetworkInterfaces()[0];
+            Debug.Print("Waiting for DHCP IP address...");
+
+            if (Network.IsDhcpEnabled)
+                while (NetworkInterface.GetAllNetworkInterfaces()[0].IPAddress == IPAddress.Any.ToString())
+                    Thread.Sleep(250);
+
+            // Display network config for debugging
+            Debug.Print("Done! Network configuration was setted to system successfully.");
+            Debug.Print("\t NETWORK INTERFACE TYPE: " + Network.NetworkInterfaceType.ToString());
+            Debug.Print("\t DHCP ENABLED: " + Network.IsDhcpEnabled.ToString());
+            Debug.Print("\t DYNAMIC DNS ENABLED: " + Network.IsDynamicDnsEnabled.ToString());
+            Debug.Print("\t IP ADDRESS: " + Network.IPAddress.ToString());
+            Debug.Print("\t SUBNET MASK: " + Network.SubnetMask.ToString());
+            Debug.Print("\t GATEWAY: " + Network.GatewayAddress.ToString());
+
+            foreach (string dnsAddress in Network.DnsAddresses)
+                Debug.Print("\t DNS SERVER: " + dnsAddress.ToString());
+            Debug.Print("\t ---");
+
+            // wait for DHCP-allocated IP address
+            while (IPAddress.GetDefaultLocalAddress() == IPAddress.Any) ;
+        }
+
+        private static void InitializeMQTT()
+        {
+            // Get broker's IP of MQTT address
+            IPHostEntry hostEntry = Dns.GetHostEntry(MQTT_SERVER);
+
+            // Create socket and connect to the broker's IP address and port
+            Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+            try
             {
-                byte remainder = (byte)(division % 16);
-                division = (byte)((division - remainder) / 16);
-
-                // At the here, we are converting 0 to 9 as directly to string, 
-                // But when we calculate and find 10 to 15, we are using ASCII 
-                // Table for decoding it. The default case for this process is 
-                // Uppercase. So we are adding 55 (additional case 10) to result
-                switch (remainder)
-                {
-                    case 0:
-                    case 1:
-                    case 2:
-                    case 3:
-                    case 4:
-                    case 5:
-                    case 6:
-                    case 7:
-                    case 8:
-                    case 9:
-                        result = remainder.ToString() + result;
-                        break;
-                    case 10:
-                    case 11:
-                    case 12:
-                    case 13:
-                    case 14:
-                    case 15:
-                        result = ((char)(remainder + 55)).ToString() + result;
-                        break;
-                    default:
-                        break;
-                }
+                Socket.Connect(new IPEndPoint(hostEntry.AddressList[0], MQTT_PORT));
+                Debug.Print("Done! Connection was established successfully.");
+            }
+            catch (SocketException error)
+            {
+                Debug.Print("Error! Unexpected connection error <" + error.ErrorCode + "> triggered.");
             }
 
-            // Return calculated result to caller
-            return result;
+            if (NetduinoMQTT.ConnectMQTT(Socket, "tester402", 20, true, MQTT_USER, MQTT_PASSWORD) != 0)
+                Debug.Print("Error! Unexpected connection error triggered.");
         }
 
         #endregion
 
         #region Trigger
+
+        private static void OnCallback(object state)
+        {
+            switch ((ETimer)state)
+            {
+                case ETimer.Bus:
+                    Scanner.ScanSlaves(I2C);
+                    ListenFunction();
+                    break;
+
+                case ETimer.Ping:
+                    // Our keep alive is 15 seconds - we ping again every 10, So we should live forever
+                    Debug.Print("Pinging " + MQTT_PORT + " port on " + MQTT_SERVER + " server...");
+                    NetduinoMQTT.PingMQTT(Socket);
+                    break;
+
+                default:
+                    break;
+            }
+        }
 
         private static void OnConnected(byte[] array, byte count)
         {
@@ -213,7 +264,7 @@ namespace netduinoMaster
                         // -----
 
                         // Subscribe all function of current slave to MQTT broker
-                        //subscribeTopic(data[index], true);
+                        SubscribeTopic(array[index], true);
                     }
                 }
             }
@@ -221,7 +272,7 @@ namespace netduinoMaster
             {
                 UnknownEvent();
             }
-           
+
         }
 
         private static void OnDisconnected(byte[] array, byte count)
@@ -235,19 +286,12 @@ namespace netduinoMaster
 
             Debug.Print("Done! " + ((int)count).ToString() + " slave device(s) disconnected from I2C bus. ID(s): ");
             foreach (var item in array)
-            {
-                //// Reinitialize config data of an I2C device
-                //Configuration = new I2CDevice.Configuration(item, I2C_BUS_CLOCKRATE);
-                //I2C.Config = Configuration;
-                //I2C.Dispose();
-
                 Debug.Print("\t ID: 0x" + item);
-            }
             Debug.Print("\t ---");
 
             // Unsubscribe all function of current slave to MQTT broker
-            //foreach (var item in array)
-            //    subscribeTopic(data[index], false);
+            foreach (var item in array)
+                SubscribeTopic(item, false);
 
             // Notify end user, status is device online
             SetRGBStatus(ENotify.Offline);
@@ -284,11 +328,68 @@ namespace netduinoMaster
             }
         }
 
+        private static bool SubscribeTopic(byte address, bool type)
+        {
+            // When we found given device in device list, generate MQTT vendor(s)
+            for (ushort index = 0; index < Slave.Length; index++)
+            {
+                if (address == Slave[index].Address)
+                {
+                    string convertedAddress = "0x" + GenerateHexadecimal(address);
+                    string[] topicList = { "isConnected", "brand", "model", "version" };
+                    string[] messageList = { type.ToString(), Slave[index].Vendor.Brand, Slave[index].Vendor.Model, Slave[index].Vendor.Version };
+
+                    for (int iterator = 0; iterator < topicList.Length; iterator++)
+                    {
+                        string[] data = { convertedAddress, topicList[iterator] };
+                        string result = '/' + Serializer.Encode('/', data);
+
+                        if (iterator == 0)
+                        {
+                            if (type)
+                                NetduinoMQTT.SubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
+                            else
+                                NetduinoMQTT.UnsubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
+
+                            NetduinoMQTT.PublishMQTT(Socket, result, messageList[iterator]);
+                        }
+                        else {
+                            if (type)
+                                NetduinoMQTT.PublishMQTT(Socket, result, messageList[iterator]);
+                        }
+                    }
+
+                    // -----
+
+                    for (ushort subindex = 0; subindex < Slave[index].Function.Length; subindex++)
+                    {
+                        if (!Slave[index].Function[subindex].Request)
+                            continue;
+
+                        string[] data = { convertedAddress, Slave[index].Function[subindex].Name };
+                        string result = '/' + Serializer.Encode('/', data);
+
+                        // Looking good, inline if-loop
+                        if (type)
+                            NetduinoMQTT.SubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
+                        else
+                            NetduinoMQTT.UnsubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
+                    }
+
+                    // Do not need to search all data, we are OK now
+                    return true;
+                }
+            }
+
+            // Worst case, when not find anything we will arrive there
+            return false;
+        }
+
         #endregion
 
         #region Listen
 
-        private static void listenFunction()
+        private static void ListenFunction()
         {
             try
             {
@@ -355,10 +456,8 @@ namespace netduinoMaster
                         data = new string[] { "0x" + GenerateHexadecimal(Slave[index].Address), Slave[index].Function[subindex].Name };
                         result = '/' + Serializer.Encode('/', data);
 
-                        Debug.Print("\t " + subBuffer[1]);
-
                         // Publish last received buffer to MQTT broker
-                        //mqttClient.publish(result, subBuffer[1]);
+                        NetduinoMQTT.PublishMQTT(Socket, result, subBuffer[1]);
                     }
                 }
             }
@@ -368,8 +467,9 @@ namespace netduinoMaster
             }
         }
 
-        private static void listenWiFi()
+        private static void ListenMQTT()
         {
+            NetduinoMQTT.Listen(Socket);
         }
 
         #endregion
@@ -849,7 +949,7 @@ namespace netduinoMaster
 
         #endregion
 
-        #region Alphanumeric
+        #region Bitwise
 
         private static bool IsAlphanumeric(string data)
         {
@@ -891,6 +991,51 @@ namespace netduinoMaster
                     return false;
 
             return true;
+        }
+
+        private static string GenerateHexadecimal(byte data)
+        {
+            string result = null;
+            byte division = data;
+
+            while (division != 0)
+            {
+                byte remainder = (byte)(division % 16);
+                division = (byte)((division - remainder) / 16);
+
+                // At the here, we are converting 0 to 9 as directly to string, 
+                // But when we calculate and find 10 to 15, we are using ASCII 
+                // Table for decoding it. The default case for this process is 
+                // Uppercase. So we are adding 55 (additional case 10) to result
+                switch (remainder)
+                {
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                    case 8:
+                    case 9:
+                        result = remainder.ToString() + result;
+                        break;
+                    case 10:
+                    case 11:
+                    case 12:
+                    case 13:
+                    case 14:
+                    case 15:
+                        result = ((char)(remainder + 55)).ToString() + result;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            // Return calculated result to caller
+            return result;
         }
 
         #endregion
