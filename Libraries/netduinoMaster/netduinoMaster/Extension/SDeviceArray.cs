@@ -34,6 +34,35 @@ namespace netduinoMaster
         }
 
         /// <summary>
+        /// Removes the element at the specified index of the array.
+        /// </summary>
+        /// <param name="target">The zero-based index of the element to remove.</param>
+        /// <returns>true if obj is found in the Queue{ } otherwise, false.</returns>
+        public bool RemoveAt(int target)
+        {
+            if (target >= Device.Length)
+                return false;
+
+            if (target == 0)
+                Dequeue();
+            else
+            {
+                // Clone main data and after resize it
+                SDevice[] newData = new SDevice[Device.Length - 1];
+                ushort iterator = 0;
+
+                for (int index = 0; index < Device.Length; index++)
+                    if (target != index)
+                        Fill(ref newData[iterator++], ref Device[index]);
+
+                Device = new SDevice[newData.Length];
+                Device = (SDevice[])newData.Clone();
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Determines whether an element is in the Queue.
         /// </summary>
         /// <param name="Function">The Function object.</param>
