@@ -42,6 +42,7 @@
     <Compile Include="Interface\IDevice.cs" />
     <Compile Include="Interface\IFunction.cs" />
     <Compile Include="Interface\IVendor.cs" />
+    <Compile Include="NetduinoMQTT.cs" />
     <Compile Include="Structure\SColorbook.cs" />
     <Compile Include="Structure\SFunction.cs" />
     <Compile Include="Structure\SDevice.cs" />
