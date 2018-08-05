@@ -145,42 +145,86 @@ namespace netduinoMaster
 
         private static void OnConnected(byte[] array, byte count)
         {
-            // IMPORTANT NOTICE: As you can see, we do not use delay function
-            // In all lib. Delay function is a non-blocking function in Arduino
-            // Core. So solving this, we are using MILLIS()
-            switch ((ETimer)state)
+            try
             {
-                case ETimer.I2C:
-                    Scanner.ScanSlaves();
-                    break;
-                case ETimer.Function:
-                    Debug.Print("Function");
-                    break;
-                case ETimer.WiFi:
-                    Debug.Print("WiFi");
-                    break;
-                default:
-                    Debug.Print("default");
-                    break;
+                // IMPORTANT NOTICE: Before the calling internal functions,
+                // Last stored data must be removed on memory. Otherwise, we can not sent
+                // Last stored data to master device. And additional, data removing will refresh
+                // the size of data in memory. This is most important thing ...
+                Transmit.Clear();
+                Receive = null;
+
+                Debug.Print("Done! " + ((int)count).ToString() + " slave device(s) connected to I2C bus. ID(s): ");
+                foreach (var item in array)
+                    Debug.Print("\t ID: 0x" + item);
+                Debug.Print("\t ---");
+
+                // Notify end user, status is device online
+                SetRGBStatus(ENotify.Online);
+
+                // -----
+
+                // IMPORTANT NOTICE: Device registering is more priority than others
+                // Step, When new device(s) were connected to master device, firstly
+                // Register these device(s) to system, after continue what you do
+                for (ushort index = 0; index < count; index++)
+                {
+                    // Register last added device to system
+                    for (ushort subindex = 0; subindex < Master.Length; subindex++)
+                    {
+
+                        string[] data = { Master[subindex], "NULL" };
+                        string result = Serializer.Encode(DATA_DELIMITER, data);
+
+                        // Write internal function list to connected device, one-by-one
+                        Write(array[index], result);
+
+                        // We will do this till decoding will return false
+                        while (true)
+                        {
+
+                            // More info was given at inside of this function
+                            // Actually, that's not worst case
+                            if (!Read(array[index]))
+                                break;
+
+                            // IMPORTANT NOTICE: At the here, We are making output control.
+                            // The code that given at above changes global flag output(s). So,
+                            // For next operations, We need to check this output(s) and in this
+                            // Way detect our current status
+                            if (Communication != ECommunication.Continue)
+                                break;
+                        }
+
+                        // If it is still IDLE, that's mean data is corrupted (Not END)
+                        if (Communication == ECommunication.Idle)
+                        {
+                            UnknownEvent();
+                            break;
+                        }
+
+                        // IMPORTANT NOTICE: Final point, If we can arrive there, that's mean
+                        // Bus communication is OK but inside data is unknown. At the next code,
+                        // We will try to decode our inside data. If we can not do it, we will
+                        // Add this unknown device as BLOCKED to system
+                        if (!FillConfiguration(subindex, array[index]))
+                            break;
+
+                        // -----
+
+                        // Subscribe all function of current slave to MQTT broker
+                        //subscribeTopic(data[index], true);
+                    }
+                }
             }
+            catch (Exception)
+            {
+                UnknownEvent();
+            }
+           
         }
 
-        private static void OnConnected(string[] array, byte count)
-        {
-            // IMPORTANT NOTICE: Before the calling internal functions,
-            // Last stored data must be removed on memory. Otherwise, we can not sent
-            // Last stored data to master device. And additional, data removing will refresh
-            // the size of data in memory. This is most important thing ...
-            Transmit.Clear();
-            Receive = null;
-
-            Debug.Print("Done! " + ((int)count).ToString() + " slave device(s) connected to I2C bus. ID(s): ");
-            foreach (var item in array)
-                Debug.Print("\t ID: 0x" + item);
-            Debug.Print("\t ---");
-        }
-
-        private static void OnDisconnected(string[] array, byte count)
+        private static void OnDisconnected(byte[] array, byte count)
         {
             // IMPORTANT NOTICE: Before the calling internal functions,
             // Last stored data must be removed on memory. Otherwise, we can not sent
@@ -191,8 +235,53 @@ namespace netduinoMaster
 
             Debug.Print("Done! " + ((int)count).ToString() + " slave device(s) disconnected from I2C bus. ID(s): ");
             foreach (var item in array)
+            {
+                //// Reinitialize config data of an I2C device
+                //Configuration = new I2CDevice.Configuration(item, I2C_BUS_CLOCKRATE);
+                //I2C.Config = Configuration;
+                //I2C.Dispose();
+
                 Debug.Print("\t ID: 0x" + item);
+            }
             Debug.Print("\t ---");
+
+            // Unsubscribe all function of current slave to MQTT broker
+            //foreach (var item in array)
+            //    subscribeTopic(data[index], false);
+
+            // Notify end user, status is device online
+            SetRGBStatus(ENotify.Offline);
+
+            // -----
+
+            // IMPORTANT NOTICE: At the here, firstly, we will make a search about
+            // Disconnected device. When we find it, We will delete index of this
+            // Device, and after we will add all temporarily popped device again
+            // If disconnected count is equal to size of device data, delete all
+            if (count >= Slave.Length)
+                Slave.Clear();
+            else {
+
+                // IMPORTANT NOTICE: In this func, we are deleting information about
+                // Disconnected device. For now, We can not delete it directly. Because
+                // Of this, for solving this, firstly we will clone first item to there
+                // Secondly we will delete this first item from queue
+                for (int index = 0; index < count; index++)
+                {
+                    for (int iterator = 0; iterator < Slave.Length; iterator++)
+                    {
+                        if (array[index] == Slave[iterator].Address)
+                        {
+                            Slave.RemoveAt(iterator);
+                            break;
+                        }
+                    }
+
+                    // We found, stop the current session
+                    if (Slave.Length == 0)
+                        break;
+                }
+            }
         }
 
         #endregion
@@ -201,72 +290,81 @@ namespace netduinoMaster
 
         private static void listenFunction()
         {
-            // IMPORTANT NOTICE: Device registering is more priority than others
-            // Step, When new device(s) were connected to master device, firstly
-            // Register these device(s) to system, after continue what you do
-            for (ushort index = 0; index < Device.Length; index++)
+            try
             {
-                // If current index is empty, go next
-                if (Device[index].Function.Length == 0)
-                    continue;
-
-                // If handshake is not ok, that's mean probably function is also not ok
-                if (Device[index].Handshake != EHandshake.Ready)
-                    continue;
-
-                // Listen functions on connected device(s)
-                for (ushort subindex = 0; subindex < Device[index].Function.Length; subindex++)
+                // IMPORTANT NOTICE: Device registering is more priority than others
+                // Step, When new device(s) were connected to master device, firstly
+                // Register these device(s) to system, after continue what you do
+                for (ushort index = 0; index < Slave.Length; index++)
                 {
-                    if (!Device[index].Function[subindex].Listen)
+                    // If current index is empty, go next
+                    if (Slave[index].Function.Length == 0)
                         continue;
 
-                    string[] data = new string[] { Device[index].Function[subindex].Name, "NULL" };
-                    string result = Serializer.Encode(DATA_DELIMITER, data);
+                    // If handshake is not ok, that's mean probably function is also not ok
+                    if (Slave[index].Handshake != EHandshake.Ready)
+                        continue;
 
-                    // Write internal function list to connected device, one-by-one
-                    Write(Device[index].Address, result);
-
-                    // We will do this till decoding will return false
-                    while (true)
+                    // Listen functions on connected device(s)
+                    for (ushort subindex = 0; subindex < Slave[index].Function.Length; subindex++)
                     {
-                        // More info was given at inside of this function
-                        // Actually, that's not worst case
-                        if (!Read(Device[index].Address))
+                        if (!Slave[index].Function[subindex].Listen)
+                            continue;
+
+                        string[] data = new string[] { Slave[index].Function[subindex].Name, "NULL" };
+                        string result = Serializer.Encode(DATA_DELIMITER, data);
+
+                        // Write internal function list to connected device, one-by-one
+                        Write(Slave[index].Address, result);
+
+                        // We will do this till decoding will return false
+                        while (true)
+                        {
+                            // More info was given at inside of this function
+                            // Actually, that's not worst case
+                            if (!Read(Slave[index].Address))
+                                break;
+
+                            // IMPORTANT NOTICE: At the here, We are making output control.
+                            // The code that given at above changes global flag output(s). So,
+                            // For next operations, We need to check this output(s) and in this
+                            // Way detect our current status
+                            if (Communication != ECommunication.Continue)
+                                break;
+                        }
+
+                        // If it is still IDLE, that's mean data is corrupted (Not END)
+                        if (Communication == ECommunication.Idle)
+                        {
+                            UnknownEvent();
+                            break;
+                        }
+
+                        // -----
+
+                        // Decode last given data from slave, after we will publish it
+                        string[] subBuffer = Receive.Split(DATA_DELIMITER);
+
+                        // Null operator check
+                        if (subBuffer == null)
                             break;
 
-                        // IMPORTANT NOTICE: At the here, We are making output control.
-                        // The code that given at above changes global flag output(s). So,
-                        // For next operations, We need to check this output(s) and in this
-                        // Way detect our current status
-                        if (Communication != ECommunication.Continue)
-                            break;
+                        // -----
+
+                        // Looking good, inline if-loop
+                        data = new string[] { "0x" + GenerateHexadecimal(Slave[index].Address), Slave[index].Function[subindex].Name };
+                        result = '/' + Serializer.Encode('/', data);
+
+                        Debug.Print("\t " + subBuffer[1]);
+
+                        // Publish last received buffer to MQTT broker
+                        //mqttClient.publish(result, subBuffer[1]);
                     }
-
-                    // If it is still IDLE, that's mean data is corrupted (Not END)
-                    if (Communication == ECommunication.Idle)
-                    {
-                        UnknownEvent();
-                        break;
-                    }
-
-                    // -----
-
-                    // Decode last given data from slave, after we will publish it
-                    string[] subBuffer = Serializer.Decode(DATA_DELIMITER, Receive);
-
-                    // Null operator check
-                    if (subBuffer == null)
-                        break;
-
-                    // -----
-
-                    // Looking good, inline if-loop
-                    data = new string[] { "0x" + GenerateHexadecimal(Device[index].Address), Device[index].Function[subindex].Name };
-                    result = '/' + Serializer.Encode('/', data);
-
-                    // Publish last received buffer to MQTT broker
-                    //mqttClient.publish(result, subBuffer[1]);
                 }
+            }
+            catch (Exception)
+            {
+                UnknownEvent();
             }
         }
 
@@ -280,78 +378,99 @@ namespace netduinoMaster
 
         private static bool Write(byte address, string data)
         {
-            // Free up out-of-date buffer data, top level clearing
-            Receive = null;
-
-            // Encode given data for bus communication
-            Encode(data);
-
-            // Send all remainder data to newly registered slave
-            while (Transmit.Length != 0)
+            try
             {
-                // Reinitialize config data of an I2C device
-                Configuration = new I2CDevice.Configuration(address, I2C_BUS_CLOCKRATE);
-                I2C = new I2CDevice(Configuration);
-                byte[] handshake = Encoding.UTF8.GetBytes(Transmit.Dequeue());
+                // Free up out-of-date buffer data, top level clearing
+                Receive = null;
 
-                // Generate a transaction for testing an connected device
-                I2CDevice.I2CTransaction[] transaction = { I2CDevice.CreateWriteTransaction(handshake) };
+                // Encode given data for bus communication
+                Encode(data);
 
-                // When retry is overflowed, abort it to worst case
-                I2C.Execute(transaction, I2C_BUS_TIMEOUT);
-                I2C.Dispose();
+                // Send all remainder data to newly registered slave
+                while (Transmit.Length != 0)
+                {
+                    // Reinitialize config data of an I2C device
+                    Configuration = new I2CDevice.Configuration(address, I2C_BUS_CLOCKRATE);
+                    I2C.Config = Configuration;
+                    byte[] handshake = Encoding.UTF8.GetBytes(Transmit.Dequeue());
 
-                // Maybe not need, right?
-                Thread.Sleep(15);
+                    // Generate a transaction for testing an connected device
+                    I2CDevice.I2CTransaction[] transaction = { I2CDevice.CreateWriteTransaction(handshake) };
+                    ushort retryCount = 0;
+
+                    // When retry is overflowed, abort it to worst case
+                    while (I2C.Execute(transaction, I2C_BUS_TIMEOUT) != handshake.Length)
+                        if (retryCount++ > I2C_BUS_RETRY)
+                            throw new Exception();
+
+                    // Maybe not need, right?
+                    Thread.Sleep(15);
+                }
+
+                // IMPORTANT NOTICE: Due to decoding of slave device, we need to Wait
+                // A little bit. Otherwise, Master device will request data From slave
+                // Device too early and slave cannot send it. Additional, when more
+                // Devices are connected, we need to downgrade delay time. Already,
+                // It will take the same time during roaming
+                Thread.Sleep(100);
+
+                // If everything goes well, we will arrive here and return true
+                return true;
             }
-
-            // IMPORTANT NOTICE: Due to decoding of slave device, we need to Wait
-            // A little bit. Otherwise, Master device will request data From slave
-            // Device too early and slave cannot send it. Additional, when more
-            // Devices are connected, we need to downgrade delay time. Already,
-            // It will take the same time during roaming
-            Thread.Sleep(100);
-
-            // If everything goes well, we will arrive here and return true
-            return true;
+            catch (Exception)
+            {
+                UnknownEvent();
+                return false;
+            }
         }
 
         private static bool Read(byte address)
         {
-            // Reinitialize config data of an I2C device
-            Configuration = new I2CDevice.Configuration(address, I2C_BUS_CLOCKRATE);
-            I2C = new I2CDevice(Configuration);
-            byte[] newReceivedBuffer = new byte[BUFFER_SIZE];
-
-            // Generate a transaction for testing an connected device
-            I2CDevice.I2CTransaction[] transaction = { I2CDevice.CreateReadTransaction(newReceivedBuffer) };
-
-            // When retry is overflowed, abort it to worst case
-            while (I2C.Execute(transaction, I2C_BUS_TIMEOUT) != newReceivedBuffer.Length) { }
-
-            // IMPORTANT NOTICE: Convert all given data to char array. At the here,
-            // We are choosed stop bit from our experience at before. This stop bit 
-            // Can be different on the another board. So, please be very carefully
-            string output = null;
-            foreach (var item in newReceivedBuffer)
+            try
             {
-                if (item == I2C_BUS_ENDOFLINE)
-                    break;
-                output = output + (char)item;
+                // Reinitialize config data of an I2C device
+                Configuration = new I2CDevice.Configuration(address, I2C_BUS_CLOCKRATE);
+                I2C.Config = Configuration;
+                byte[] newReceivedBuffer = new byte[BUFFER_SIZE];
+
+                // Generate a transaction for testing an connected device
+                I2CDevice.I2CTransaction[] transaction = { I2CDevice.CreateReadTransaction(newReceivedBuffer) };
+                ushort retryCount = 0;
+
+                // When retry is overflowed, abort it to worst case
+                while (I2C.Execute(transaction, I2C_BUS_TIMEOUT) != newReceivedBuffer.Length)
+                    if (retryCount++ > I2C_BUS_RETRY)
+                        throw new Exception();
+
+                // IMPORTANT NOTICE: Convert all given data to char array. At the here,
+                // We are choosed stop bit from our experience at before. This stop bit 
+                // Can be different on the another board. So, please be very carefully
+                string output = null;
+                foreach (var item in newReceivedBuffer)
+                {
+                    if (item == I2C_BUS_ENDOFLINE)
+                        break;
+                    output = output + (char)item;
+                }
+
+                // Maybe not need, right?
+                Thread.Sleep(15);
+
+                // Decode last given data
+                if (!Decode(output))
+                    return false;
+
+                // IMPORTANT NOTICE: Actually When we arrived this point, we arrived
+                // Worst case point even though It was TRUE. If you came there, program will
+                // Run till communication flag will be END or IDLE type. Otherwise, this
+                // Point is related with CONTINUE status
+                return true;
             }
-
-            // Maybe not need, right?
-            Thread.Sleep(15);
-
-            // Decode last given data
-            if (!Decode(output))
+            catch (Exception)
+            {
+                UnknownEvent();
                 return false;
-
-            // IMPORTANT NOTICE: Actually When we arrived this point, we arrived
-            // Worst case point even though It was TRUE. If you came there, program will
-            // Run till communication flag will be END or IDLE type. Otherwise, this
-            // Point is related with CONTINUE status
-            return true;
+            }
         }
 
         #endregion
@@ -446,6 +565,110 @@ namespace netduinoMaster
 
                 outputData = outputData + PROTOCOL_DELIMITERS[2];
                 Transmit.Enqueue(outputData);
+            }
+
+            // If everything goes well, we will arrive here and return true
+            return true;
+        }
+
+        #endregion
+
+        #region Fill
+
+        private static bool FillConfiguration(ushort status, byte address)
+        {
+            // Generate a delimiter data and use in with decoding function
+            string[] newReceivedBuffer = Receive.Split(DATA_DELIMITER);
+
+            // Null operator check
+            if (newReceivedBuffer == null)
+                return false;
+
+            // IMPORTANT NOTICE: In this program, we have two data type, one of them
+            // Is VENDOR data, other one is FUNCTION data. Because of this we have two
+            // Statement in switch case
+            switch (status)
+            {
+                case 0:
+                    if (!FillVendor(address, newReceivedBuffer))
+                        return false;
+
+                    // Notify user
+                    Debug.Print("Done! The vendors of [0x" + GenerateHexadecimal(address) + "] address were saved successfully to system.");
+                    Debug.Print("\t BRAND: " + Slave[0].Vendor.Brand);
+                    Debug.Print("\t MODEL: " + Slave[0].Vendor.Model);
+                    Debug.Print("\t VERSION: " + Slave[0].Vendor.Version);
+                    Debug.Print("\t ---");
+                    break;
+
+                case 1:
+                    if (!FillFunction(address, newReceivedBuffer))
+                    {
+                        // Notify end user, status is device online
+                        SetRGBStatus(ENotify.Unconfirmed);
+                        return false;
+                    }
+
+                    // Notify end user, status is device online
+                    SetRGBStatus(ENotify.Confirmed);
+
+                    // Notify user
+                    for (ushort index = 0; index < Slave[0].Function.Length; index++)
+                        Debug.Print("\t FUNCTION: " + Slave[0].Function[index].Name);
+                    Debug.Print("\t ---");
+
+                    break;
+
+                default:
+                    return false;
+            }
+
+            // If everything goes well, we will arrive here and return true
+            return true;
+        }
+
+        private static bool FillVendor(byte address, string[] data)
+        {
+            // Worst case, if vendor list size is not equal to default vendor list size
+            if (data.Length != 3)
+            {
+                // Major code for device list
+                Slave.Enqueue(new SDevice(new SVendor(), new SFunctionArray(), EHandshake.Unknown, address));
+                UnknownEvent();
+
+                return false;
+            }
+
+            // IMPORTANT NOTICE: When a new device is registered to master,
+            // We are decoding all vendor Data at the here. When we are doing
+            // All of these also we need temp variable
+            Slave.Enqueue(new SDevice(new SVendor(data[0], data[1], data[2]), new SFunctionArray(), EHandshake.Ready, address));
+
+            // If everything goes well, we will arrive here and return true
+            return true;
+        }
+
+        private static bool FillFunction(byte address, string[] data)
+        {
+            // Worst case, function list size is equal to char - 1 size
+            if (data.Length % 3 != 0)
+                return false;
+
+            for (ushort index = 0; index < data.Length; index += 3)
+            {
+                if (!IsAlphanumeric(data[index]))
+                    continue;
+
+                if (!IsNumeric(data[index + 1]))
+                    continue;
+
+                if (!IsNumeric(data[index + 2]))
+                    continue;
+
+                bool request = (data[index + 1][0] == '1' ? true : false);
+                bool listen = (data[index + 2][0] == '1' ? true : false);
+
+                Slave[0].Function.Enqueue(new SFunction(data[index], request, listen));
             }
 
             // If everything goes well, we will arrive here and return true
