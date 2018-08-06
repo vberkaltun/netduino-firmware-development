@@ -82,7 +82,7 @@ namespace netduinoMaster
 
             // Attach functions to lib and after run main lib
             OnTimerPing = new TimerCallback(ListenPing);
-            TimerPing = new Timer(OnTimerPing, null, 0, 500);
+            TimerPing = new Timer(OnTimerPing, null, 1000, 500);
 
             // Calling the Thread.Sleep method causes the current thread to 
             // Immediately block for the number of milliseconds or the time interval
