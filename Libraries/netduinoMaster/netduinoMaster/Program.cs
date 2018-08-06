@@ -41,15 +41,16 @@ namespace netduinoMaster
         static I2CDevice.Configuration Configuration = new I2CDevice.Configuration(0, I2C_BUS_CLOCKRATE);
         static I2CDevice I2C = new I2CDevice(Configuration);
 
-        static Thread Thread;
-        static Socket Socket;
+        static Thread ThreadPort;
+        static Thread ThreadBus;
 
-        static TimerCallback Callback = null;
-        static Timer TimerBus = null;
+        static TimerCallback OnTimerPing = null;
         static Timer TimerPing = null;
 
-        #endregion
+        static Socket Socket;
 
+        #endregion
+        
         #region Uncategorized
 
         public static void Main()
@@ -71,14 +72,17 @@ namespace netduinoMaster
             Scanner.OnDisconnected = OnDisconnected;
             NetduinoMQTT.OnReceived = OnReceived;
 
-            // Attach functions to lib and after run main lib
-            Callback = new TimerCallback(OnCallback);
-            TimerPing = new Timer(Callback, ETimer.Ping, 0, 2500);
-            TimerBus = new Timer(Callback, ETimer.Bus, 0, 500);
+            // Setup and start a new thread for the listener
+            ThreadPort = new Thread(ListenPort);
+            ThreadPort.Start();
 
             // Setup and start a new thread for the listener
-            Thread = new Thread(ListenMQTT);
-            Thread.Start();
+            ThreadBus = new Thread(ListenBus);
+            ThreadBus.Start();
+
+            // Attach functions to lib and after run main lib
+            OnTimerPing = new TimerCallback(ListenPing);
+            TimerPing = new Timer(OnTimerPing, null, 0, 500);
 
             // Calling the Thread.Sleep method causes the current thread to 
             // Immediately block for the number of milliseconds or the time interval
@@ -101,6 +105,130 @@ namespace netduinoMaster
             // the size of data in memory. This is most important thing ...
             Transmit.Clear();
             Receive = null;
+        }
+
+        private static bool SubscribeTopic(byte address, bool type)
+        {
+            // When we found given device in device list, generate MQTT vendor(s)
+            for (ushort index = 0; index < Slave.Length; index++)
+            {
+                if (address == Slave[index].Address)
+                {
+                    string convertedAddress = "0x" + GenerateHexadecimal(address);
+                    string[] topicList = { "isConnected", "brand", "model", "version" };
+                    string[] messageList = { type ? "1" : "0", Slave[index].Vendor.Brand, Slave[index].Vendor.Model, Slave[index].Vendor.Version };
+
+                    for (int iterator = 0; iterator < topicList.Length; iterator++)
+                    {
+                        string[] data = { convertedAddress, topicList[iterator] };
+                        string result = '/' + Serializer.Encode('/', data);
+
+                        if (type || iterator == 0)
+                            NetduinoMQTT.PublishMQTT(Socket, result, messageList[iterator]);
+                    }
+
+                    // -----
+
+                    for (ushort subindex = 0; subindex < Slave[index].Function.Length; subindex++)
+                    {
+                        if (!Slave[index].Function[subindex].Request)
+                            continue;
+
+                        string[] data = { convertedAddress, Slave[index].Function[subindex].Name };
+                        string result = '/' + Serializer.Encode('/', data);
+
+                        // Looking good, inline if-loop
+                        if (type)
+                            NetduinoMQTT.SubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
+                        else
+                            NetduinoMQTT.UnsubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
+                    }
+
+                    // Do not need to search all data, we are OK now
+                    return true;
+                }
+            }
+
+            // Worst case, when not find anything we will arrive there
+            return false;
+        }
+
+        private static void FetchFunction()
+        {
+            try
+            {
+                // IMPORTANT NOTICE: Device registering is more priority than others
+                // Step, When new device(s) were connected to master device, firstly
+                // Register these device(s) to system, after continue what you do
+                for (ushort index = 0; index < Slave.Length; index++)
+                {
+                    // If current index is empty, go next
+                    if (Slave[index].Function.Length == 0)
+                        continue;
+
+                    // If handshake is not ok, that's mean probably function is also not ok
+                    if (Slave[index].Handshake != EHandshake.Ready)
+                        continue;
+
+                    // Listen functions on connected device(s)
+                    for (ushort subindex = 0; subindex < Slave[index].Function.Length; subindex++)
+                    {
+                        if (!Slave[index].Function[subindex].Listen)
+                            continue;
+
+                        string[] data = new string[] { Slave[index].Function[subindex].Name, "NULL" };
+                        string result = Serializer.Encode(DATA_DELIMITER, data);
+
+                        // Write internal function list to connected device, one-by-one
+                        Write(Slave[index].Address, result);
+
+                        // We will do this till decoding will return false
+                        while (true)
+                        {
+                            // More info was given at inside of this function
+                            // Actually, that's not worst case
+                            if (!Read(Slave[index].Address))
+                                break;
+
+                            // IMPORTANT NOTICE: At the here, We are making output control.
+                            // The code that given at above changes global flag output(s). So,
+                            // For next operations, We need to check this output(s) and in this
+                            // Way detect our current status
+                            if (Communication != ECommunication.Continue)
+                                break;
+                        }
+
+                        // If it is still IDLE, that's mean data is corrupted (Not END)
+                        if (Communication == ECommunication.Idle)
+                        {
+                            UnknownEvent();
+                            break;
+                        }
+
+                        // -----
+
+                        // Decode last given data from slave, after we will publish it
+                        string[] subBuffer = Receive.Split(DATA_DELIMITER);
+
+                        // Null operator check
+                        if (subBuffer == null)
+                            break;
+
+                        // -----
+
+                        // Looking good, inline if-loop
+                        data = new string[] { "0x" + GenerateHexadecimal(Slave[index].Address), Slave[index].Function[subindex].Name };
+                        result = '/' + Serializer.Encode('/', data);
+
+                        // Publish last received buffer to MQTT broker
+                        NetduinoMQTT.PublishMQTT(Socket, result, subBuffer[1]);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                UnknownEvent();
+            }
         }
 
         #endregion
@@ -182,26 +310,6 @@ namespace netduinoMaster
         #endregion
 
         #region Trigger
-
-        private static void OnCallback(object state)
-        {
-            switch ((ETimer)state)
-            {
-                case ETimer.Bus:
-                    Scanner.ScanSlaves(I2C);
-                    ListenFunction();
-                    break;
-
-                case ETimer.Ping:
-                    // Our keep alive is 15 seconds - we ping again every 10, So we should live forever
-                    Debug.Print("Pinging " + MQTT_PORT + " port on " + MQTT_SERVER + " server...");
-                    NetduinoMQTT.PingMQTT(Socket);
-                    break;
-
-                default:
-                    break;
-            }
-        }
 
         private static void OnConnected(byte[] array, byte count)
         {
@@ -337,52 +445,6 @@ namespace netduinoMaster
             }
         }
 
-        private static bool SubscribeTopic(byte address, bool type)
-        {
-            // When we found given device in device list, generate MQTT vendor(s)
-            for (ushort index = 0; index < Slave.Length; index++)
-            {
-                if (address == Slave[index].Address)
-                {
-                    string convertedAddress = "0x" + GenerateHexadecimal(address);
-                    string[] topicList = { "isConnected", "brand", "model", "version" };
-                    string[] messageList = { type ? "1" : "0", Slave[index].Vendor.Brand, Slave[index].Vendor.Model, Slave[index].Vendor.Version };
-
-                    for (int iterator = 0; iterator < topicList.Length; iterator++)
-                    {
-                        string[] data = { convertedAddress, topicList[iterator] };
-                        string result = '/' + Serializer.Encode('/', data);
-
-                        if (type || iterator == 0)
-                            NetduinoMQTT.PublishMQTT(Socket, result, messageList[iterator]);
-                    }
-
-                    // -----
-
-                    for (ushort subindex = 0; subindex < Slave[index].Function.Length; subindex++)
-                    {
-                        if (!Slave[index].Function[subindex].Request)
-                            continue;
-
-                        string[] data = { convertedAddress, Slave[index].Function[subindex].Name };
-                        string result = '/' + Serializer.Encode('/', data);
-
-                        // Looking good, inline if-loop
-                        if (type)
-                            NetduinoMQTT.SubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
-                        else
-                            NetduinoMQTT.UnsubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
-                    }
-
-                    // Do not need to search all data, we are OK now
-                    return true;
-                }
-            }
-
-            // Worst case, when not find anything we will arrive there
-            return false;
-        }
-
         private static void OnReceived(string topic, string payload)
         {
             // Print out some debugging info
@@ -424,87 +486,25 @@ namespace netduinoMaster
 
         #region Listen
 
-        private static void ListenFunction()
+        private static void ListenPort()
         {
-            try
+            NetduinoMQTT.Listen(Socket);
+        }
+
+        private static void ListenBus()
+        {
+            while (true)
             {
-                // IMPORTANT NOTICE: Device registering is more priority than others
-                // Step, When new device(s) were connected to master device, firstly
-                // Register these device(s) to system, after continue what you do
-                for (ushort index = 0; index < Slave.Length; index++)
-                {
-                    // If current index is empty, go next
-                    if (Slave[index].Function.Length == 0)
-                        continue;
-
-                    // If handshake is not ok, that's mean probably function is also not ok
-                    if (Slave[index].Handshake != EHandshake.Ready)
-                        continue;
-
-                    // Listen functions on connected device(s)
-                    for (ushort subindex = 0; subindex < Slave[index].Function.Length; subindex++)
-                    {
-                        if (!Slave[index].Function[subindex].Listen)
-                            continue;
-
-                        string[] data = new string[] { Slave[index].Function[subindex].Name, "NULL" };
-                        string result = Serializer.Encode(DATA_DELIMITER, data);
-
-                        // Write internal function list to connected device, one-by-one
-                        Write(Slave[index].Address, result);
-
-                        // We will do this till decoding will return false
-                        while (true)
-                        {
-                            // More info was given at inside of this function
-                            // Actually, that's not worst case
-                            if (!Read(Slave[index].Address))
-                                break;
-
-                            // IMPORTANT NOTICE: At the here, We are making output control.
-                            // The code that given at above changes global flag output(s). So,
-                            // For next operations, We need to check this output(s) and in this
-                            // Way detect our current status
-                            if (Communication != ECommunication.Continue)
-                                break;
-                        }
-
-                        // If it is still IDLE, that's mean data is corrupted (Not END)
-                        if (Communication == ECommunication.Idle)
-                        {
-                            UnknownEvent();
-                            break;
-                        }
-
-                        // -----
-
-                        // Decode last given data from slave, after we will publish it
-                        string[] subBuffer = Receive.Split(DATA_DELIMITER);
-
-                        // Null operator check
-                        if (subBuffer == null)
-                            break;
-
-                        // -----
-
-                        // Looking good, inline if-loop
-                        data = new string[] { "0x" + GenerateHexadecimal(Slave[index].Address), Slave[index].Function[subindex].Name };
-                        result = '/' + Serializer.Encode('/', data);
-
-                        // Publish last received buffer to MQTT broker
-                        NetduinoMQTT.PublishMQTT(Socket, result, subBuffer[1]);
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                UnknownEvent();
+                Scanner.ScanSlaves(I2C);
+                FetchFunction();
             }
         }
 
-        private static void ListenMQTT()
+        private static void ListenPing(object state)
         {
-            NetduinoMQTT.Listen(Socket);
+            // Our keep alive is 15 seconds - we ping again every 10, So we should live forever
+            Debug.Print("Pinging " + MQTT_PORT + " port on " + MQTT_SERVER + " server...");
+            NetduinoMQTT.PingMQTT(Socket);
         }
 
         #endregion
