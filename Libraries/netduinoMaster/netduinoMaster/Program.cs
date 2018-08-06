@@ -74,13 +74,14 @@ namespace netduinoMaster
 
             // Setup and start a new thread for the listener
             ThreadMQTT = new Thread(ListenMQTT);
+            ThreadMQTT.Priority = ThreadPriority.Highest;
             ThreadMQTT.Start();
 
             // Attach functions to lib and after run main lib
             Callback = new TimerCallback(OnCallback);
-            TimerPing = new Timer(Callback, ETimer.Ping, 0, 5000);
-            TimerScan = new Timer(Callback, ETimer.Scan, 0, 100);
-            TimerFetch = new Timer(Callback, ETimer.Fetch, 0, 100);
+            TimerPing = new Timer(Callback, ETimer.Ping, 0, 8000);
+            TimerScan = new Timer(Callback, ETimer.Scan, 0, 500);
+            TimerFetch = new Timer(Callback, ETimer.Fetch, 0, 250);
 
             // Calling the Thread.Sleep method causes the current thread to 
             // Immediately block for the number of milliseconds or the time interval
@@ -824,20 +825,13 @@ namespace netduinoMaster
         {
             // hue parameter checking/fixing
             if (hue < 0 || hue >= 360)
-            {
                 hue = 0;
-            }
             // if Brightness is turned off, then everything is zero.
             if (value <= 0)
-            {
                 red = green = blue = 0;
-            }
-
             // if saturation is turned off, then there is no color/hue. it's grayscale.
             else if (saturation <= 0)
-            {
                 red = green = blue = value;
-            }
             else // if we got here, then there is a color to create.
             {
                 double hf = hue / 60.0;
@@ -849,8 +843,8 @@ namespace netduinoMaster
 
                 switch (i)
                 {
-
                     // Red Dominant
+                    case 6:
                     case 0:
                         red = value;
                         green = tv;
@@ -882,19 +876,8 @@ namespace netduinoMaster
                         break;
 
                     // Red Red Dominant
-                    case 5:
-                        red = value;
-                        green = pv;
-                        blue = qv;
-                        break;
-
-                    // In case the math is out of bounds, this is a fix.
-                    case 6:
-                        red = value;
-                        green = tv;
-                        blue = pv;
-                        break;
                     case -1:
+                    case 5:
                         red = value;
                         green = pv;
                         blue = qv;
