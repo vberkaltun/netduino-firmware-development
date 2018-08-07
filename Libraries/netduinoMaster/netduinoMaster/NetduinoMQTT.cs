@@ -619,7 +619,6 @@ namespace netduinoMaster
         // Ping the MQTT broker - used to extend keep alive
         public static int PingMQTT(Socket socket)
         {
-
             int index = 0;
             int returnCode = 0;
             byte[] buffer = new byte[2];

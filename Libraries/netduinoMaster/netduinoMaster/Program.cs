@@ -50,15 +50,18 @@ namespace netduinoMaster
         static Timer TimerFetch = null;
 
         #endregion
-        
+
         #region Uncategorized
 
         public static void Main()
         {
             // Initialize device, do not remove
-            InitializeDevice();
-            InitializeNetwork();
-            InitializeMQTT();
+            Debug.Print("Waiting for Device Configuration...");
+            while (!InitializeDevice()) ;
+            Debug.Print("Waiting for Network Configuration...");
+            while (!InitializeNetwork()) ;
+            Debug.Print("Waiting for MQTT Configuration...");
+            while (!InitializeMQTT()) ;
 
             // Start Pulse-Width Modulation of led operation
             RGBRed.Start();
@@ -80,7 +83,7 @@ namespace netduinoMaster
             // Attach functions to lib and after run main lib
             Callback = new TimerCallback(OnCallback);
             TimerPing = new Timer(Callback, ETimer.Ping, 0, 8000);
-            TimerScan = new Timer(Callback, ETimer.Scan, 0, 500);
+            TimerScan = new Timer(Callback, ETimer.Scan, 0, 1000);
             TimerFetch = new Timer(Callback, ETimer.Fetch, 0, 250);
 
             // Calling the Thread.Sleep method causes the current thread to 
@@ -163,8 +166,13 @@ namespace netduinoMaster
             {
                 case ETimer.Ping:
                     // Our keep alive is 15 seconds - we ping again every 10, So we should live forever
-                    Debug.Print("Pinging " + MQTT_PORT + " port on " + MQTT_SERVER + " server...");
-                    NetduinoMQTT.PingMQTT(Socket);
+                    Debug.Print("Pinging <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
+                    if (NetduinoMQTT.PingMQTT(Socket) == 1)
+                    {
+                        Debug.Print("Error! MQTT Connection lost. Reconnecting <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
+                        InitializeNetwork();
+                        InitializeMQTT();
+                    }
                     break;
 
                 case ETimer.Scan:
@@ -190,64 +198,100 @@ namespace netduinoMaster
 
         #region Initialize
 
-        private static void InitializeDevice()
+        private static bool InitializeDevice()
         {
-            // Display network config for debugging
-            Debug.Print("Done! Device configuration was setted to system successfully.");
-
-            // Show device info, not necessary
-            Debug.Print("\t DEVICE BRAND: " + DEVICE_BRAND);
-            Debug.Print("\t DEVICE MODEL: " + DEVICE_MODEL);
-            Debug.Print("\t DEVICE VERSION: " + DEVICE_VERSION);
-            Debug.Print("\t ---");
-
-            // Function list of master scanner, do not change
-            Master.Enqueue("getVendors");
-            Master.Enqueue("getFunctionList");
-        }
-
-        private static void InitializeNetwork()
-        {
-            // Wait for Network address if DHCP
-            NetworkInterface Network = NetworkInterface.GetAllNetworkInterfaces()[0];
-            Debug.Print("Waiting for DHCP IP address...");
-
-            if (Network.IsDhcpEnabled)
-                while (NetworkInterface.GetAllNetworkInterfaces()[0].IPAddress == IPAddress.Any.ToString())
-                    Thread.Sleep(250);
-
-            // Display network config for debugging
-            Debug.Print("Done! Network configuration was setted to system successfully.");
-            Debug.Print("\t NETWORK INTERFACE TYPE: " + Network.NetworkInterfaceType.ToString());
-            Debug.Print("\t DHCP ENABLED: " + Network.IsDhcpEnabled.ToString());
-            Debug.Print("\t DYNAMIC DNS ENABLED: " + Network.IsDynamicDnsEnabled.ToString());
-            Debug.Print("\t IP ADDRESS: " + Network.IPAddress.ToString());
-            Debug.Print("\t SUBNET MASK: " + Network.SubnetMask.ToString());
-            Debug.Print("\t GATEWAY: " + Network.GatewayAddress.ToString());
-
-            foreach (string dnsAddress in Network.DnsAddresses)
-                Debug.Print("\t DNS SERVER: " + dnsAddress.ToString());
-            Debug.Print("\t ---");
-
-            // wait for DHCP-allocated IP address
-            while (IPAddress.GetDefaultLocalAddress() == IPAddress.Any) ;
-        }
-
-        private static void InitializeMQTT()
-        {
-            // Get broker's IP of MQTT address
-            IPHostEntry hostEntry = Dns.GetHostEntry(MQTT_SERVER);
-
-            // Create socket and connect to the broker's IP address and port
-            Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            // Wait a little bit, That will make better the next step 
+            Thread.Sleep(500);
 
             try
             {
+                // Function list of master scanner, do not change
+                Master.Enqueue("getVendors");
+                Master.Enqueue("getFunctionList");
+
+                // Display network config for debugging
+                Debug.Print("Done! Device Configuration was setted to system successfully.");
+
+                // Show device info, not necessary
+                Debug.Print("\t DEVICE BRAND: " + DEVICE_BRAND);
+                Debug.Print("\t DEVICE MODEL: " + DEVICE_MODEL);
+                Debug.Print("\t DEVICE VERSION: " + DEVICE_VERSION);
+                Debug.Print("\t ---");
+
+                // Best case
+                return true;
+            }
+            catch (Exception)
+            {
+                // Worst case
+                Debug.Print("Error! Unexpected Device Error triggered.");
+                return false;
+            }
+
+        }
+
+        private static bool InitializeNetwork()
+        {
+            // Wait a little bit, That will make better the next step 
+            Thread.Sleep(500);
+
+            try
+            {
+                // Wait for Network address if DHCP
+                NetworkInterface Network = NetworkInterface.GetAllNetworkInterfaces()[0];
+
+                if (!Network.IsDhcpEnabled)
+                    throw new Exception();
+
+                if (NetworkInterface.GetAllNetworkInterfaces()[0].IPAddress == IPAddress.Any.ToString())
+                    throw new Exception();
+
+                // wait for DHCP-allocated IP address
+                if (IPAddress.GetDefaultLocalAddress() == IPAddress.Any)
+                    throw new Exception();
+
+                // Display network config for debugging
+                Debug.Print("Done! Network Configuration was setted to system successfully.");
+                Debug.Print("\t NETWORK INTERFACE TYPE: " + Network.NetworkInterfaceType.ToString());
+                Debug.Print("\t DHCP ENABLED: " + Network.IsDhcpEnabled.ToString());
+                Debug.Print("\t DYNAMIC DNS ENABLED: " + Network.IsDynamicDnsEnabled.ToString());
+                Debug.Print("\t IP ADDRESS: " + Network.IPAddress.ToString());
+                Debug.Print("\t SUBNET MASK: " + Network.SubnetMask.ToString());
+                Debug.Print("\t GATEWAY: " + Network.GatewayAddress.ToString());
+
+                foreach (string dnsAddress in Network.DnsAddresses)
+                    Debug.Print("\t DNS SERVER: " + dnsAddress.ToString());
+                Debug.Print("\t ---");
+
+                // Best case
+                return true;
+            }
+            catch (Exception)
+            {
+                // Worst case
+                Debug.Print("Error! Unexpected Network Error triggered.");
+                return false;
+            }
+        }
+
+        private static bool InitializeMQTT()
+        {
+            // Wait a little bit, That will make better the next step 
+            Thread.Sleep(500);
+
+            try
+            {
+                // Get broker's IP of MQTT address
+                IPHostEntry hostEntry = Dns.GetHostEntry(MQTT_SERVER);
+
+                // Create socket and connect to the broker's IP address and port
+                Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 Socket.Connect(new IPEndPoint(hostEntry.AddressList[0], MQTT_PORT));
-                Debug.Print("Done! Connection was established successfully.");
 
                 if (NetduinoMQTT.ConnectMQTT(Socket, DEVICE_MODEL, 20, true, MQTT_USER, MQTT_PASSWORD) != 0)
-                    Debug.Print("Error! Unexpected connection error triggered.");
+                    throw new Exception();
+
+                Debug.Print("Done! Socket Connection was established successfully.");
 
                 // IMPORTANT NOTICE: First of all, we need to subscribe main device
                 // We call it like XXXX/status and this broker is related with SSR
@@ -255,10 +299,17 @@ namespace netduinoMaster
                 string[] data = { DEVICE_MODEL, "status" };
                 string result = '/' + Serializer.Encode(new char[1] { '/' }, data);
                 NetduinoMQTT.SubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
+
+                Debug.Print("Done! MQTT Configuration was established successfully <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server.");
+
+                // Best case
+                return true;
             }
             catch (SocketException error)
             {
-                Debug.Print("Error! Unexpected connection error <" + error.ErrorCode + "> triggered.");
+                // Worst case
+                Debug.Print("Error! Unexpected Socket Error <" + error.ErrorCode + "> triggered.");
+                return false;
             }
         }
 
