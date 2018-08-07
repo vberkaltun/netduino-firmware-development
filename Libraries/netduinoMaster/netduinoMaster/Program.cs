@@ -47,7 +47,6 @@ namespace netduinoMaster
         static TimerCallback Callback = null;
         static Timer TimerPing = null;
         static Timer TimerScan = null;
-        static Timer TimerFetch = null;
 
         #endregion
 
@@ -82,9 +81,8 @@ namespace netduinoMaster
 
             // Attach functions to lib and after run main lib
             Callback = new TimerCallback(OnCallback);
-            TimerPing = new Timer(Callback, ETimer.Ping, 0, 8000);
-            TimerScan = new Timer(Callback, ETimer.Scan, 0, 1000);
-            TimerFetch = new Timer(Callback, ETimer.Fetch, 0, 250);
+            TimerPing = new Timer(Callback, ETimer.Ping, 0, 5000);
+            TimerScan = new Timer(Callback, ETimer.Scan, 0, 250);
 
             // Calling the Thread.Sleep method causes the current thread to 
             // Immediately block for the number of milliseconds or the time interval
@@ -167,7 +165,7 @@ namespace netduinoMaster
                 case ETimer.Ping:
                     // Our keep alive is 15 seconds - we ping again every 10, So we should live forever
                     Debug.Print("Pinging <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
-                    if (NetduinoMQTT.PingMQTT(Socket) == 1)
+                    if (NetduinoMQTT.PingMQTT(Socket) != 0)
                     {
                         Debug.Print("Error! MQTT Connection lost. Reconnecting <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
                         InitializeNetwork();
@@ -179,12 +177,6 @@ namespace netduinoMaster
                     lock (I2C)
                     {
                         Scanner.ScanSlaves(I2C);
-                    }
-                    break;
-
-                case ETimer.Fetch:
-                    lock (I2C)
-                    {
                         FetchFunction();
                     }
                     break;
