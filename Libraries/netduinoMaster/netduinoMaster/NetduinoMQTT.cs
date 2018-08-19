@@ -104,7 +104,6 @@ namespace netduinoMaster
         // Connect to the MQTT Server
         public static int ConnectMQTT(Socket socket, string clientID, int keepAlive = 20, bool cleanSession = true, string username = "", string password = "")
         {
-
             int index = 0;
             int tmp = 0;
             int remainingLength = 0;
@@ -227,9 +226,7 @@ namespace netduinoMaster
             buffer[index++] = (byte)(utf8ClientID.Length / 256); // Length MSB
             buffer[index++] = (byte)(utf8ClientID.Length % 256); // Length LSB
             for (var i = 0; i < utf8ClientID.Length; i++)
-            {
                 buffer[index++] = utf8ClientID[i];
-            }
 
             // Username
             if (usingUsername)
@@ -238,9 +235,7 @@ namespace netduinoMaster
                 buffer[index++] = (byte)(utf8Username.Length % 256); // Length LSB
 
                 for (var i = 0; i < utf8Username.Length; i++)
-                {
                     buffer[index++] = utf8Username[i];
-                }
             }
 
             // Password
@@ -250,9 +245,7 @@ namespace netduinoMaster
                 buffer[index++] = (byte)(utf8Password.Length % 256); // Length LSB
 
                 for (var i = 0; i < utf8Password.Length; i++)
-                {
                     buffer[index++] = utf8Password[i];
-                }
             }
 
             // Send the message
@@ -260,11 +253,9 @@ namespace netduinoMaster
 
             // The return code should equal our buffer length
             if (returnCode != buffer.Length)
-            {
                 return CONNECTION_ERROR;
-            }
 
-            // Get the acknowledgement message
+            // Get the acknowledgment message
             returnCode = socket.Receive(inputBuffer, 0);
 
             if (returnCode < 1)
@@ -277,9 +268,7 @@ namespace netduinoMaster
             {
                 returnCode = HandleCONNACK(socket, firstByte);
                 if (returnCode > 0)
-                {
                     return ERROR;
-                }
             }
             return SUCCESS;
         }
@@ -355,17 +344,13 @@ namespace netduinoMaster
             buffer[index++] = (byte)(utf8Topic.Length % 256); // Length LSB
             // Topic
             for (var i = 0; i < utf8Topic.Length; i++)
-            {
                 buffer[index++] = utf8Topic[i];
-            }
             // End of variable header
 
             // Start of Payload
             // Message (Length is accounted for in the fixed header)
             for (var i = 0; i < message.Length; i++)
-            {
                 buffer[index++] = (byte)message[i];
-            }
             // End of Payload
 
             returnCode = socket.Send(buffer, buffer.Length, 0);
@@ -417,9 +402,7 @@ namespace netduinoMaster
                 utf8Topics[index] = new byte[Encoding.UTF8.GetBytes(topic[index]).Length];
                 utf8Topics[index] = Encoding.UTF8.GetBytes(topic[index]);
                 if ((utf8Topics[index].Length > MAX_TOPIC_LENGTH) || (utf8Topics[index].Length < MIN_TOPIC_LENGTH))
-                {
                     return TOPIC_LENGTH_ERROR;
-                }
                 else
                 {
                     payloadLength += 2; // Size (LSB + MSB)
@@ -520,9 +503,7 @@ namespace netduinoMaster
                 utf8Topics[index] = new byte[Encoding.UTF8.GetBytes(topic[index]).Length];
                 utf8Topics[index] = Encoding.UTF8.GetBytes(topic[index]);
                 if ((utf8Topics[index].Length > MAX_TOPIC_LENGTH) || (utf8Topics[index].Length < MIN_TOPIC_LENGTH))
-                {
                     return TOPIC_LENGTH_ERROR;
-                }
                 else
                 {
                     payloadLength += 2; // Size (LSB + MSB)
@@ -610,9 +591,7 @@ namespace netduinoMaster
             returnCode = socket.Send(buffer, index, 0);
             // The return code should equal our buffer length
             if (returnCode != buffer.Length)
-            {
                 return CONNECTION_ERROR;
-            }
             return SUCCESS;
         }
 
@@ -630,9 +609,7 @@ namespace netduinoMaster
             returnCode = socket.Send(buffer, index, 0);
             // The return code should equal our buffer length
             if (returnCode != buffer.Length)
-            {
                 return CONNECTION_ERROR;
-            }
             return SUCCESS;
         }
 
@@ -810,9 +787,7 @@ namespace netduinoMaster
             topicLength += buffer[index++];
             topic = new byte[topicLength];
             while (topicIndex < topicLength)
-            {
                 topic[topicIndex++] = buffer[index++];
-            }
             QoS = firstByte & 0x06;
             if (QoS > 0)
             {
@@ -855,9 +830,7 @@ namespace netduinoMaster
             byte[] buffer = new byte[1];
             returnCode = socket.Receive(buffer, 0);
             if ((buffer[0] != 0) || (returnCode != 1))
-            {
                 return ERROR;
-            }
             return SUCCESS;
         }
 
