@@ -58,5 +58,9 @@ namespace netduinoMaster
         // I2C bus maximum and minimum bus range
         protected const byte DEFAULT_DEVICE_MAX = byte.MaxValue;
         protected const byte DEFAULT_DEVICE_MIN = byte.MinValue;
+        
+        // MQTT Keep alive - timeout and listen
+        protected const ushort MQTT_TIMEOUT = 20;
+        protected const ushort MQTT_LISTEN = 100;
     }
 }
