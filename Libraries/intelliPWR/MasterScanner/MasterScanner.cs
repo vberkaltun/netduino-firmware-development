@@ -233,7 +233,7 @@ namespace intelliPWR.MasterScanner
                 OnTriggeredConnected(currentConnectedSlavesArray, currentConnectedSlavesCount);
 
             if (currentDisconnectedSlavesCount != 0)
-                OnTriggeredDisconnected(currentDisconnectedSlavesArray, currentDisconnectedSlavesCount); 
+                OnTriggeredDisconnected(currentDisconnectedSlavesArray, currentDisconnectedSlavesCount);
         }
 
         public bool SetRange(byte startAddress, byte stopAddress)

@@ -155,7 +155,8 @@ namespace netduinoMaster
 
         private static void ListenMQTT()
         {
-            NetduinoMQTT.Listen(Socket);
+            while (true)
+                NetduinoMQTT.Listen(Socket);
         }
 
         private static void OnCallback(object state)
@@ -163,13 +164,22 @@ namespace netduinoMaster
             switch ((ETimer)state)
             {
                 case ETimer.Ping:
-                    // Our keep alive is 15 seconds - we ping again every 10, So we should live forever
-                    Debug.Print("Pinging <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
-                    if (NetduinoMQTT.PingMQTT(Socket) != 0)
+                    lock (Socket)
                     {
-                        Debug.Print("Error! MQTT Connection lost. Reconnecting <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
-                        InitializeNetwork();
-                        InitializeMQTT();
+                        // Our keep alive is 15 seconds - we ping again every 10, So we should live forever
+                        Debug.Print("Pinging <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
+
+                        if (NetduinoMQTT.PingMQTT(Socket) == -1)
+                        {
+                            Debug.Print("Error! MQTT Connection lost. Reconnecting <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
+                            NetduinoMQTT.DisconnectMQTT(Socket);
+                            Socket.Close();
+
+                            Debug.Print("Waiting for Network Configuration...");
+                            while (!InitializeNetwork()) ;
+                            Debug.Print("Waiting for MQTT Configuration...");
+                            while (!InitializeMQTT()) ;
+                        }
                     }
                     break;
 
@@ -279,8 +289,9 @@ namespace netduinoMaster
                 // Create socket and connect to the broker's IP address and port
                 Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 Socket.Connect(new IPEndPoint(hostEntry.AddressList[0], MQTT_PORT));
+                Socket.Listen(MQTT_LISTEN);
 
-                if (NetduinoMQTT.ConnectMQTT(Socket, DEVICE_MODEL, 20, true, MQTT_USER, MQTT_PASSWORD) != 0)
+                if (NetduinoMQTT.ConnectMQTT(Socket, DEVICE_MODEL, MQTT_TIMEOUT, true, MQTT_USER, MQTT_PASSWORD) != 0)
                     throw new Exception();
 
                 Debug.Print("Done! Socket Connection was established successfully.");
