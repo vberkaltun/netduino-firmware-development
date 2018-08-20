@@ -725,6 +725,7 @@ namespace netduinoMaster
                         break;
                     case 13:  // PINGRESP
                         Debug.Print("Done! PINGRESP message received.");
+                        pingresp = true;
                         returnCode = HandlePINGRESP(socket, first);
                         break;
                     case 14:  // DISCONNECT (Broker Only)
