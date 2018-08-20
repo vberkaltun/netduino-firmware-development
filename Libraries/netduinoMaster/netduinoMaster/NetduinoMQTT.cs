@@ -96,6 +96,9 @@ namespace netduinoMaster
         private const int USING_PASSWORD_FLAG = 0x40;
         private const int CONTINUATION_BIT = 0x80;
 
+        // Checking for response of ping
+        private static bool pingresp = true;
+
         #region Function
 
         // Setup our random number generator
@@ -598,6 +601,11 @@ namespace netduinoMaster
         // Ping the MQTT broker - used to extend keep alive
         public static int PingMQTT(Socket socket)
         {
+            if (pingresp)
+                pingresp = false;
+            else
+                return -1;
+
             int index = 0;
             int returnCode = 0;
             byte[] buffer = new byte[2];
@@ -652,91 +660,88 @@ namespace netduinoMaster
         }
 
         // Listen for data on the socket - call appropriate handlers based on first byte
-        public static int Listen(Socket socket)
+        public static void Listen(Socket socket)
         {
             int returnCode = 0;
             byte first = 0x00;
             byte[] buffer = new byte[1];
-            while (true)
+            returnCode = socket.Receive(buffer, 0);
+            if (returnCode > 0)
             {
-                returnCode = socket.Receive(buffer, 0);
-                if (returnCode > 0)
+                first = buffer[0];
+                switch (first >> 4)
                 {
-                    first = buffer[0];
-                    switch (first >> 4)
-                    {
-                        case 0:  // Reserved
-                            Debug.Print("Done! First reserved message received.");
-                            returnCode = ERROR;
-                            break;
-                        case 1:  // Connect (Broker Only)
-                            Debug.Print("Done! CONNECT message received.");
-                            returnCode = ERROR;
-                            break;
-                        case 2:  // CONNACK
-                            Debug.Print("Done! CONNACK message received.");
-                            returnCode = HandleCONNACK(socket, first);
-                            break;
-                        case 3:  // PUBLISH
-                            Debug.Print("Done! PUBLISH message received.");
-                            returnCode = HandlePUBLISH(socket, first);
-                            break;
-                        case 4:  // PUBACK (QoS > 0 - did it anyway)
-                            Debug.Print("Done! PUBACK message received.");
-                            returnCode = HandlePUBACK(socket, first);
-                            break;
-                        case 5:  // PUBREC (QoS 2)
-                            Debug.Print("Done! PUBREC message received.");
-                            returnCode = ERROR;
-                            break;
-                        case 6:  // PUBREL (QoS 2)
-                            Debug.Print("Done! PUBREL message received.");
-                            returnCode = ERROR;
-                            break;
-                        case 7:  // PUBCOMP (QoS 2)
-                            Debug.Print("Done! PUBCOMP message received.");
-                            returnCode = ERROR;
-                            break;
-                        case 8:  // SUBSCRIBE (Broker only)
-                            Debug.Print("Done! SUBSCRIBE message received.");
-                            returnCode = ERROR;
-                            break;
-                        case 9:  // SUBACK 
-                            Debug.Print("Done! SUBACK message received.");
-                            returnCode = HandleSUBACK(socket, first);
-                            break;
-                        case 10:  // UNSUBSCRIBE (Broker Only)
-                            Debug.Print("Done! UNSUBSCRIBE message received.");
-                            returnCode = ERROR;
-                            break;
-                        case 11:  // UNSUBACK
-                            Debug.Print("Done! UNSUBACK message received.");
-                            returnCode = HandleUNSUBACK(socket, first);
-                            break;
-                        case 12:  // PINGREQ (Technically a Broker Deal - but we're doing it anyway)
-                            Debug.Print("Done! PINGREQ message received.");
-                            returnCode = HandlePINGREQ(socket, first);
-                            break;
-                        case 13:  // PINGRESP
-                            Debug.Print("Done! PINGRESP message received.");
-                            returnCode = HandlePINGRESP(socket, first);
-                            break;
-                        case 14:  // DISCONNECT (Broker Only)
-                            Debug.Print("Done! DISCONNECT message received.");
-                            returnCode = ERROR;
-                            break;
-                        case 15:  // Reserved
-                            Debug.Print("Done! Last reserved Message received.");
-                            returnCode = ERROR;
-                            break;
-                        default:  // Default action
-                            Debug.Print("Done! Unknown message received.");  // Should never get here
-                            returnCode = ERROR;
-                            break;
-                    }
-                    if (returnCode != SUCCESS)
-                        Debug.Print("Error! An error occurred in message processing on <" + socket.ToString() + "> port.");
+                    case 0:  // RESERVED
+                        Debug.Print("Done! First reserved message received.");
+                        returnCode = ERROR;
+                        break;
+                    case 1:  // Connect (Broker Only)
+                        Debug.Print("Done! CONNECT message received.");
+                        returnCode = ERROR;
+                        break;
+                    case 2:  // CONNACK
+                        Debug.Print("Done! CONNACK message received.");
+                        returnCode = HandleCONNACK(socket, first);
+                        break;
+                    case 3:  // PUBLISH
+                        Debug.Print("Done! PUBLISH message received.");
+                        returnCode = HandlePUBLISH(socket, first);
+                        break;
+                    case 4:  // PUBACK (QoS > 0 - did it anyway)
+                        Debug.Print("Done! PUBACK message received.");
+                        returnCode = HandlePUBACK(socket, first);
+                        break;
+                    case 5:  // PUBREC (QoS 2)
+                        Debug.Print("Done! PUBREC message received.");
+                        returnCode = ERROR;
+                        break;
+                    case 6:  // PUBREL (QoS 2)
+                        Debug.Print("Done! PUBREL message received.");
+                        returnCode = ERROR;
+                        break;
+                    case 7:  // PUBCOMP (QoS 2)
+                        Debug.Print("Done! PUBCOMP message received.");
+                        returnCode = ERROR;
+                        break;
+                    case 8:  // SUBSCRIBE (Broker only)
+                        Debug.Print("Done! SUBSCRIBE message received.");
+                        returnCode = ERROR;
+                        break;
+                    case 9:  // SUBACK 
+                        Debug.Print("Done! SUBACK message received.");
+                        returnCode = HandleSUBACK(socket, first);
+                        break;
+                    case 10:  // UNSUBSCRIBE (Broker Only)
+                        Debug.Print("Done! UNSUBSCRIBE message received.");
+                        returnCode = ERROR;
+                        break;
+                    case 11:  // UNSUBACK
+                        Debug.Print("Done! UNSUBACK message received.");
+                        returnCode = HandleUNSUBACK(socket, first);
+                        break;
+                    case 12:  // PINGREQ (Technically a Broker Deal - but we're doing it anyway)
+                        Debug.Print("Done! PINGREQ message received.");
+                        returnCode = HandlePINGREQ(socket, first);
+                        break;
+                    case 13:  // PINGRESP
+                        Debug.Print("Done! PINGRESP message received.");
+                        returnCode = HandlePINGRESP(socket, first);
+                        break;
+                    case 14:  // DISCONNECT (Broker Only)
+                        Debug.Print("Done! DISCONNECT message received.");
+                        returnCode = ERROR;
+                        break;
+                    case 15:  // RESERVED
+                        Debug.Print("Done! Last reserved Message received.");
+                        returnCode = ERROR;
+                        break;
+                    default:  // Default action
+                        Debug.Print("Done! Unknown message received.");  // Should never get here
+                        returnCode = ERROR;
+                        break;
                 }
+                if (returnCode != SUCCESS)
+                    Debug.Print("Error! An error occurred in message processing on <" + socket.ToString() + "> port.");
             }
         }
 
