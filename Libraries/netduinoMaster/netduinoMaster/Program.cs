@@ -384,7 +384,7 @@ namespace netduinoMaster
                 Debug.Print("\t ---");
 
                 // Notify end user, status is device online
-                SetRGBStatus(ENotify.Online);
+                Notify.Enqueue(ENotify.Online);
 
                 // -----
 
@@ -467,7 +467,7 @@ namespace netduinoMaster
                 SubscribeTopic(item, false);
 
             // Notify end user, status is device online
-            SetRGBStatus(ENotify.Offline);
+            Notify.Enqueue(ENotify.Offline);
 
             // -----
 
@@ -848,13 +848,13 @@ namespace netduinoMaster
                     if (!FillFunction(address, newReceivedBuffer))
                     {
                         // Notify end user, status is device online
-                        SetRGBStatus(ENotify.Unconfirmed);
+                        Notify.Enqueue(ENotify.Unconfirmed);
 
                         return false;
                     }
 
                     // Notify end user, status is device online
-                    SetRGBStatus(ENotify.Confirmed);
+                    Notify.Enqueue(ENotify.Confirmed);
 
                     // Notify user
                     for (ushort index = 0; index < Slave[0].Function.Length; index++)
@@ -1083,7 +1083,7 @@ namespace netduinoMaster
             }
 
             // Do not forget to set RGB status
-            Notify = status;
+            NotifyFlag = status;
         }
 
         #endregion
