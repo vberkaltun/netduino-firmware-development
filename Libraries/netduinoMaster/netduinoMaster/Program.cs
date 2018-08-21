@@ -416,12 +416,12 @@ namespace netduinoMaster
                             // The code that given at above changes global flag output(s). So,
                             // For next operations, We need to check this output(s) and in this
                             // Way detect our current status
-                            if (Communication != ECommunication.Continue)
+                            if (CommunicationFlag != ECommunication.Continue)
                                 break;
                         }
 
                         // If it is still IDLE, that's mean data is corrupted (Not END)
-                        if (Communication == ECommunication.Idle)
+                        if (CommunicationFlag == ECommunication.Idle)
                         {
                             UnknownEvent();
                             break;
@@ -554,12 +554,12 @@ namespace netduinoMaster
                             // The code that given at above changes global flag output(s). So,
                             // For next operations, We need to check this output(s) and in this
                             // Way detect our current status
-                            if (Communication != ECommunication.Continue)
+                            if (CommunicationFlag != ECommunication.Continue)
                                 break;
                         }
 
                         // If it is still IDLE, that's mean data is corrupted (Not END)
-                        if (Communication == ECommunication.Idle)
+                        if (CommunicationFlag == ECommunication.Idle)
                         {
                             UnknownEvent();
                             break;
@@ -736,15 +736,15 @@ namespace netduinoMaster
             {
                 case IDLE_SINGLE_START:
                 case IDLE_MULTI_END:
-                    Communication = ECommunication.End;
+                    CommunicationFlag = ECommunication.End;
                     break;
 
                 case IDLE_MULTI_START:
-                    Communication = ECommunication.Continue;
+                    CommunicationFlag = ECommunication.Continue;
                     break;
 
                 default:
-                    Communication = ECommunication.Idle;
+                    CommunicationFlag = ECommunication.Idle;
 
                     // Free up out-of-date buffer data
                     Receive = null;
@@ -1042,7 +1042,7 @@ namespace netduinoMaster
             switch (status)
             {
                 case ENotify.Offline:
-                    switch (Notify)
+                    switch (NotifyFlag)
                     {
                         case ENotify.Online:
                             ChangeRGBStatus(ColorWhite, ColorBlack, BLINK_CLOCKRATE, 1);
