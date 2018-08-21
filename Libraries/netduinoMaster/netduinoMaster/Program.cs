@@ -36,6 +36,7 @@ namespace netduinoMaster
 
         static SStringArray Master = new SStringArray();
         static SDeviceArray Slave = new SDeviceArray();
+        static SNotifyArray Notify = new SNotifyArray();
 
         static SStringArray Transmit = new SStringArray();
         static string Receive = null;
@@ -49,6 +50,7 @@ namespace netduinoMaster
         static TimerCallback Callback = null;
         static Timer TimerPing = null;
         static Timer TimerScan = null;
+        static Timer TimerRGB = null;
 
         #endregion
 
@@ -215,6 +217,22 @@ namespace netduinoMaster
                         FetchFunction();
                     }
 
+                    break;
+
+                case ETimer.RGB:
+                    if (LockRGB == null)
+                        break;
+
+                    lock (LockRGB)
+                    {
+                        if (Notify.Length != 0)
+                        {
+                            // Notify end user, status is reserved
+                            Debug.Print("Done! RGB LED status was changed from <" + NotifyFlag.ToString() + "> to <" + Notify.Peek().ToString() + "> status.");
+
+                            SetRGBStatus(Notify.Dequeue());
+                        }
+                    }
                     break;
 
                 default:
