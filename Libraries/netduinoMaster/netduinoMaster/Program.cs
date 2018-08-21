@@ -211,11 +211,11 @@ namespace netduinoMaster
                     if (I2C == null)
                         break;
 
-                    lock (I2C)
-                    {
-                        Scanner.ScanSlaves(I2C);
-                        FetchFunction();
-                    }
+                    lock (I2C) lock(NetduinoMQTT)
+                        {
+                            Scanner.ScanSlaves(I2C);
+                            FetchFunction();
+                        }
 
                     break;
 
