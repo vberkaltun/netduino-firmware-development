@@ -85,6 +85,7 @@ namespace netduinoMaster
             Callback = new TimerCallback(OnCallback);
             TimerPing = new Timer(Callback, ETimer.Ping, 0, 5000);
             TimerScan = new Timer(Callback, ETimer.Scan, 0, 250);
+            TimerRGB = new Timer(Callback, ETimer.RGB, 0, 1000);
 
             // Calling the Thread.Sleep method causes the current thread to 
             // Immediately block for the number of milliseconds or the time interval
