@@ -1024,7 +1024,7 @@ namespace netduinoMaster
             double value = source.Value;
 
             HSVToRGB(hue, saturation, value, red, green, blue);
-            for (int index = 0; index < divider; index++)
+            for (int index = 0; index <= divider; index++)
             {
                 red = red + effect.Red;
                 green = green + effect.Green;
