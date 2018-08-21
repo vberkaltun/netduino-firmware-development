@@ -25,8 +25,8 @@ namespace netduinoMaster
         // Subslave of slave device. At the here, we do not need to scan all
         // These device on the bus. In any case, slave device will scan their
         // Own slave device on the bus
-        protected const ushort I2C_BUS_TIMEOUT = 20;
-        protected const ushort I2C_BUS_RETRY = 2;
+        protected const ushort I2C_BUS_TIMEOUT = 90;
+        protected const ushort I2C_BUS_RETRY = 10;
         protected const byte I2C_BUS_CLOCKRATE = 100;
         protected const byte I2C_BUS_ENDOFLINE = 255;
         protected const byte I2C_START_ADDRESS = 0x20;
