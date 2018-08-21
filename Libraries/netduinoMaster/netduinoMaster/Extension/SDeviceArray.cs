@@ -134,6 +134,9 @@ namespace netduinoMaster
         /// <returns>The object at the beginning of the Queue.</returns>
         public SDevice Peek()
         {
+            if (Device.Length == 0)
+                return new SDevice();
+
             // Clone will return data and after resize it
             SDevice returnData = new SDevice();
             Fill(ref returnData, ref Device[0]);

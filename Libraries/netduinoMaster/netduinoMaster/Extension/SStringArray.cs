@@ -104,6 +104,9 @@ namespace netduinoMaster
         /// <returns>The object at the beginning of the Queue.</returns>
         public string Peek()
         {
+            if (String.Length == 0)
+                return null;
+
             // Returns beginning of the Queue without removing it
             return String[0];
         }

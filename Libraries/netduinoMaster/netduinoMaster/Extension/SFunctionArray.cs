@@ -105,6 +105,9 @@ namespace netduinoMaster
         /// <returns>The object at the beginning of the Queue.</returns>
         public SFunction Peek()
         {
+            if (Function.Length == 0)
+                return new SFunction();
+
             // Clone will return data and after resize it
             SFunction returnData = new SFunction();
             Fill(ref returnData, ref Function[0]);
