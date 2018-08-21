@@ -81,7 +81,6 @@ namespace netduinoMaster
 
             // Setup and start a new thread for the listener
             ThreadMQTT = new Thread(ListenMQTT);
-            ThreadMQTT.Priority = ThreadPriority.Highest;
             ThreadMQTT.Start();
 
             // Attach functions to lib and after run main lib
