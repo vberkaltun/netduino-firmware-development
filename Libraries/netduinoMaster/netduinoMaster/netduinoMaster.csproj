@@ -37,6 +37,7 @@
   <ItemGroup>
     <Compile Include="Constant.cs" />
     <Compile Include="Enumeration.cs" />
+    <Compile Include="Extension\SNotifyArray.cs" />
     <Compile Include="Extension\SStringArray.cs" />
     <Compile Include="Interface\IColorbook.cs" />
     <Compile Include="Interface\IDevice.cs" />
