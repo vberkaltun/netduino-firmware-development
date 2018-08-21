@@ -46,6 +46,7 @@ namespace netduinoMaster
 
         static Thread ThreadMQTT;
         static Socket Socket;
+        static Object LockRGB = new Object();
 
         static TimerCallback Callback = null;
         static Timer TimerPing = null;
@@ -1059,23 +1060,15 @@ namespace netduinoMaster
                     break;
 
                 case ENotify.Online:
-                    for (int index = 0; index < 2; index++)
-                    {
-                        ChangeRGBStatus(ColorBlack, ColorWhite, BLINK_CLOCKRATE, 0);
-                        Thread.Sleep(200);
-
-                        ChangeRGBStatus(ColorWhite, ColorBlack, BLINK_CLOCKRATE, 1);
-                        Thread.Sleep(500);
-                    }
-                    ChangeRGBStatus(ColorBlack, ColorWhite, BLINK_CLOCKRATE, 0);
+                    ChangeRGBStatus(ColorBlack, ColorWhite, BLINK_CLOCKRATE, 1);
                     break;
 
                 case ENotify.Unconfirmed:
-                    ChangeRGBStatus(ColorWhite, ColorOrange, BLINK_CLOCKRATE, 0);
+                    ChangeRGBStatus(ColorWhite, ColorOrange, BLINK_CLOCKRATE, 1);
                     break;
 
                 case ENotify.Confirmed:
-                    ChangeRGBStatus(ColorWhite, ColorBlue, BLINK_CLOCKRATE, 0);
+                    ChangeRGBStatus(ColorWhite, ColorBlue, BLINK_CLOCKRATE, 1);
                     break;
 
                 default:
