@@ -9,6 +9,7 @@ using Microsoft.SPOT.Net.NetworkInformation;
 using SecretLabs.NETMF.Hardware.Netduino;
 using intelliPWR.MasterScanner;
 using intelliPWR.Serializer;
+using intelliPWR.NetduinoMQTT;
 
 namespace netduinoMaster
 {
@@ -28,6 +29,7 @@ namespace netduinoMaster
 
         static MasterScanner Scanner = new MasterScanner(I2C_BUS_CLOCKRATE, I2C_BUS_TIMEOUT, I2C_BUS_RETRY);
         static Serializer Serializer = new Serializer();
+        static NetduinoMQTT NetduinoMQTT = new NetduinoMQTT();
 
         static ECommunication Communication = ECommunication.Idle;
         static ENotify Notify = ENotify.Offline;
@@ -156,7 +158,29 @@ namespace netduinoMaster
         private static void ListenMQTT()
         {
             while (true)
-                NetduinoMQTT.Listen(Socket);
+            {
+                try
+                {
+                    if (NetduinoMQTT == null)
+                        throw new Exception();
+
+                    // At the best case, start to listening port
+                    NetduinoMQTT.Listen(Socket);
+                }
+                catch (Exception)
+                {
+                    // Notify end - user
+                    Debug.Print("Error! MQTT Connection lost. Reconnecting <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
+
+                    lock (Socket)
+                    {
+                        Debug.Print("Waiting for Network Configuration...");
+                        while (!InitializeNetwork()) ;
+                        Debug.Print("Waiting for MQTT Configuration...");
+                        while (!InitializeMQTT()) ;
+                    }
+                }
+            }
         }
 
         private static void OnCallback(object state)
@@ -164,31 +188,32 @@ namespace netduinoMaster
             switch ((ETimer)state)
             {
                 case ETimer.Ping:
-                    lock (Socket)
+                    if (NetduinoMQTT == null)
+                        break;
+
+                    lock (NetduinoMQTT)
                     {
                         // Our keep alive is 15 seconds - we ping again every 10, So we should live forever
                         Debug.Print("Pinging <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
 
                         if (NetduinoMQTT.PingMQTT(Socket) == -1)
                         {
-                            Debug.Print("Error! MQTT Connection lost. Reconnecting <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
                             NetduinoMQTT.DisconnectMQTT(Socket);
-                            Socket.Close();
-
-                            Debug.Print("Waiting for Network Configuration...");
-                            while (!InitializeNetwork()) ;
-                            Debug.Print("Waiting for MQTT Configuration...");
-                            while (!InitializeMQTT()) ;
+                            NetduinoMQTT = null;
                         }
                     }
                     break;
 
                 case ETimer.Scan:
+                    if (I2C == null)
+                        break;
+
                     lock (I2C)
                     {
                         Scanner.ScanSlaves(I2C);
                         FetchFunction();
                     }
+
                     break;
 
                 default:
@@ -284,12 +309,15 @@ namespace netduinoMaster
             try
             {
                 // Get broker's IP of MQTT address
+                //IPHostEntry hostEntry = Dns.GetHostEntry(MQTT_SERVER);
                 IPHostEntry hostEntry = Dns.GetHostEntry(MQTT_SERVER);
 
                 // Create socket and connect to the broker's IP address and port
-                Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Udp);
                 Socket.Connect(new IPEndPoint(hostEntry.AddressList[0], MQTT_PORT));
-                Socket.Listen(MQTT_LISTEN);
+
+                // Create MQTT and connect to the broker's port with username and password
+                NetduinoMQTT = new NetduinoMQTT();
 
                 if (NetduinoMQTT.ConnectMQTT(Socket, DEVICE_MODEL, MQTT_TIMEOUT, true, MQTT_USER, MQTT_PASSWORD) != 0)
                     throw new Exception();
@@ -802,6 +830,7 @@ namespace netduinoMaster
                     {
                         // Notify end user, status is device online
                         SetRGBStatus(ENotify.Unconfirmed);
+
                         return false;
                     }
 
