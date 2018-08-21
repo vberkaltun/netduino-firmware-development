@@ -42,7 +42,6 @@
     <Compile Include="Interface\IDevice.cs" />
     <Compile Include="Interface\IFunction.cs" />
     <Compile Include="Interface\IVendor.cs" />
-    <Compile Include="NetduinoMQTT.cs" />
     <Compile Include="Structure\SColorbook.cs" />
     <Compile Include="Structure\SFunction.cs" />
     <Compile Include="Structure\SDevice.cs" />
@@ -55,6 +54,9 @@
   <ItemGroup>
     <Reference Include="intelliPWR.MasterScanner">
       <HintPath>..\..\intelliPWR\MasterScanner\bin\Release\intelliPWR.MasterScanner.dll</HintPath>
+    </Reference>
+    <Reference Include="intelliPWR.NetduinoMQTT">
+      <HintPath>..\..\intelliPWR\NetduinoMQTT\bin\Release\intelliPWR.NetduinoMQTT.dll</HintPath>
     </Reference>
     <Reference Include="intelliPWR.Serializer">
       <HintPath>..\..\intelliPWR\Serializer\bin\Release\intelliPWR.Serializer.dll</HintPath>
