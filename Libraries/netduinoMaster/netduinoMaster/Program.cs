@@ -77,7 +77,7 @@ namespace netduinoMaster
             // Which one is to be triggered
             Scanner.OnConnected = OnConnected;
             Scanner.OnDisconnected = OnDisconnected;
-            NetduinoMQTT.OnReceived = OnReceived;
+            NetduinoMQTT.OnReceived = WriteFunction;
 
             // Setup and start a new thread for the listener
             ThreadMQTT = new Thread(ListenMQTT);
@@ -498,14 +498,6 @@ namespace netduinoMaster
                     if (Slave.Length == 0)
                         break;
                 }
-            }
-        }
-
-        private static void OnReceived(string topic, string payload)
-        {
-            lock (I2C)
-            {
-                WriteFunction(topic, payload);
             }
         }
 
