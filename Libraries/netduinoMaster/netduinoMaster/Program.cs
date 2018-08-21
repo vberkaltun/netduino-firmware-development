@@ -31,8 +31,8 @@ namespace netduinoMaster
         static Serializer Serializer = new Serializer();
         static NetduinoMQTT NetduinoMQTT = new NetduinoMQTT();
 
-        static ECommunication Communication = ECommunication.Idle;
-        static ENotify Notify = ENotify.Offline;
+        static ECommunication CommunicationFlag = ECommunication.Idle;
+        static ENotify NotifyFlag = ENotify.Offline;
 
         static SStringArray Master = new SStringArray();
         static SDeviceArray Slave = new SDeviceArray();
