@@ -1,4 +1,4 @@
-/*
+﻿/*
  
 Copyright 2011-2012 Dan Anderson. All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, 
@@ -30,82 +30,26 @@ using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
 using Socket = System.Net.Sockets.Socket;
 
-namespace netduinoMaster
+namespace intelliPWR.NetduinoMQTT
 {
     /// <summary>
     /// Delegate that defines event handler for received MQTT.
     /// </summary>
     public delegate void ReceivedEventHandler(string topic, string payload);
 
-    public static class NetduinoMQTT
+    public class NetduinoMQTT : Constant
     {
-        public static ReceivedEventHandler OnReceived;
-
-        // IMPORTANT NOTICE: All these constants have been scaled down to the 
-        // Hardware maximum values are commented out. You can adjust, but keep 
-        // In mind the limits of the hardware. So, All update at here is your 
-        // Own risk about your hardware
-        private const int MQTTPROTOCOLVERSION = 3;
-        private const int MAXLENGTH = 10240;
-        private const int MAX_CLIENTID = 23;
-        private const int MIN_CLIENTID = 1;
-        private const int MAX_KEEPALIVE = 65535;
-        private const int MIN_KEEPALIVE = 0;
-        private const int MAX_USERNAME = 12;
-        private const int MAX_PASSWORD = 12;
-        private const int MAX_TOPIC_LENGTH = 256;
-        private const int MIN_TOPIC_LENGTH = 1;
-        private const int MAX_MESSAGEID = 65535;
-
-        // Error codes of MQTT Clients
-        private const int CLIENTID_LENGTH_ERROR = 1;
-        private const int KEEPALIVE_LENGTH_ERROR = 1;
-        private const int MESSAGE_LENGTH_ERROR = 1;
-        private const int TOPIC_LENGTH_ERROR = 1;
-        private const int TOPIC_WILDCARD_ERROR = 1;
-        private const int USERNAME_LENGTH_ERROR = 1;
-        private const int PASSWORD_LENGTH_ERROR = 1;
-        private const int CONNECTION_ERROR = 1;
-        private const int ERROR = 1;
-        private const int SUCCESS = 0;
-        private const int CONNECTION_OK = 0;
-        private const int CONNACK_LENGTH = 4;
-        private const int PINGRESP_LENGTH = 2;
-
-        // Connection codes of MQTT Clients
-        private const byte MQTT_CONN_OK = 0x00;
-        private const byte MQTT_CONN_BAD_PROTOCOL_VERSION = 0x01;
-        private const byte MQTT_CONN_BAD_IDENTIFIER = 0x02;
-        private const byte MQTT_CONN_SERVER_UNAVAILABLE = 0x03;
-        private const byte MQTT_CONN_BAD_AUTH = 0x04;
-        private const byte MQTT_CONN_NOT_AUTH = 0x05;
-
-        // Message types of MQTT Clients
-        private const byte MQTT_CONNECT_TYPE = 0x10;
-        private const byte MQTT_CONNACK_TYPE = 0x20;
-        private const byte MQTT_PUBLISH_TYPE = 0x30;
-        private const byte MQTT_PING_REQ_TYPE = 0xc0;
-        private const byte MQTT_PING_RESP_TYPE = 0xd0;
-        private const byte MQTT_DISCONNECT_TYPE = 0xe0;
-        private const byte MQTT_SUBSCRIBE_TYPE = 0x82;
-        private const byte MQTT_UNSUBSCRIBE_TYPE = 0xa2;
-
-        // Flags of MQTT Clients
-        private const int CLEAN_SESSION_FLAG = 0x02;
-        private const int USING_USERNAME_FLAG = 0x80;
-        private const int USING_PASSWORD_FLAG = 0x40;
-        private const int CONTINUATION_BIT = 0x80;
-
         // Checking for response of ping
-        private static bool pingresp = true;
-
-        #region Function
+        private bool pingresp = true;
+        public ReceivedEventHandler OnReceived;
 
         // Setup our random number generator
-        private static Random Rand = new Random((int)(Utility.GetMachineTime().Ticks & 0xffffffff));
+        private Random Rand = new Random((int)(Utility.GetMachineTime().Ticks & 0xffffffff));
+
+        #region Public
 
         // Connect to the MQTT Server
-        public static int ConnectMQTT(Socket socket, string clientID, int keepAlive = 20, bool cleanSession = true, string username = "", string password = "")
+        public int ConnectMQTT(Socket socket, string clientID, int keepAlive = 20, bool cleanSession = true, string username = "", string password = "")
         {
             int index = 0;
             int tmp = 0;
@@ -277,7 +221,7 @@ namespace netduinoMaster
         }
 
         // Publish a message to a broker (3.3)
-        public static int PublishMQTT(Socket socket, string topic, string message)
+        public int PublishMQTT(Socket socket, string topic, string message)
         {
             int index = 0;
             int tmp = 0;
@@ -365,7 +309,7 @@ namespace netduinoMaster
         }
 
         // Disconnect from broker (3.14)
-        public static int DisconnectMQTT(Socket socket)
+        public int DisconnectMQTT(Socket socket)
         {
             byte[] buffer = null;
             int returnCode = 0;
@@ -381,7 +325,7 @@ namespace netduinoMaster
         }
 
         // Subscribe to a topic 
-        public static int SubscribeMQTT(Socket socket, string[] topic, int[] QoS, int topics)
+        public int SubscribeMQTT(Socket socket, string[] topic, int[] QoS, int topics)
         {
             int index = 0;
             int index2 = 0;
@@ -482,7 +426,7 @@ namespace netduinoMaster
         }
 
         // Unsubscribe to a topic
-        public static int UnsubscribeMQTT(Socket socket, string[] topic, int[] QoS, int topics)
+        public int UnsubscribeMQTT(Socket socket, string[] topic, int[] QoS, int topics)
         {
             int index = 0;
             int index2 = 0;
@@ -581,7 +525,7 @@ namespace netduinoMaster
         }
 
         // Respond to a PINGRESP
-        public static int SendPINGRESP(Socket socket)
+        private int SendPINGRESP(Socket socket)
         {
             int index = 0;
             int returnCode = 0;
@@ -599,7 +543,7 @@ namespace netduinoMaster
         }
 
         // Ping the MQTT broker - used to extend keep alive
-        public static int PingMQTT(Socket socket)
+        public int PingMQTT(Socket socket)
         {
             if (pingresp)
                 pingresp = false;
@@ -621,46 +565,8 @@ namespace netduinoMaster
             return SUCCESS;
         }
 
-        // Append the remaining length field for the fixed header
-        public static int DoRemainingLength(int remainingLength, int index, byte[] buffer)
-        {
-            int digit = 0;
-            do
-            {
-                digit = remainingLength % 128;
-                remainingLength /= 128;
-                if (remainingLength > 0)
-                {
-                    digit = digit | CONTINUATION_BIT;
-                }
-                buffer[index++] = (byte)digit;
-            } while (remainingLength > 0);
-            return index;
-        }
-
-        // Extract the remaining length field from the fixed header
-        public static int UndoRemainingLength(Socket socket)
-        {
-            int multiplier = 1;
-            int count = 0;
-            int digit = 0;
-            int remainingLength = 0;
-            byte[] nextByte = new byte[1];
-            do
-            {
-                if (socket.Receive(nextByte, 0) == 1)
-                {
-                    digit = (byte)nextByte[0];
-                    remainingLength += ((digit & 0x7F) * multiplier);
-                    multiplier *= 128;
-                }
-                count++;
-            } while (((digit & 0x80) != 0) && count < 4);
-            return remainingLength;
-        }
-
         // Listen for data on the socket - call appropriate handlers based on first byte
-        public static void Listen(Socket socket)
+        public void Listen(Socket socket)
         {
             int returnCode = 0;
             byte first = 0x00;
@@ -746,8 +652,54 @@ namespace netduinoMaster
             }
         }
 
+        #endregion
+
+        #region Private
+
+        // Append the remaining length field for the fixed header
+        private int DoRemainingLength(int remainingLength, int index, byte[] buffer)
+        {
+            int digit = 0;
+            do
+            {
+                digit = remainingLength % 128;
+                remainingLength /= 128;
+                if (remainingLength > 0)
+                {
+                    digit = digit | CONTINUATION_BIT;
+                }
+                buffer[index++] = (byte)digit;
+            } while (remainingLength > 0);
+            return index;
+        }
+
+        // Extract the remaining length field from the fixed header
+        private int UndoRemainingLength(Socket socket)
+        {
+            int multiplier = 1;
+            int count = 0;
+            int digit = 0;
+            int remainingLength = 0;
+            byte[] nextByte = new byte[1];
+            do
+            {
+                if (socket.Receive(nextByte, 0) == 1)
+                {
+                    digit = (byte)nextByte[0];
+                    remainingLength += ((digit & 0x7F) * multiplier);
+                    multiplier *= 128;
+                }
+                count++;
+            } while (((digit & 0x80) != 0) && count < 4);
+            return remainingLength;
+        }
+
+        #endregion
+
+        #region Handle
+
         // Messages from the broker come back to us as publish messages
-        public static int HandleSUBACK(Socket socket, byte firstByte)
+        private int HandleSUBACK(Socket socket, byte firstByte)
         {
             int remainingLength = 0;
             int messageID = 0;
@@ -770,7 +722,7 @@ namespace netduinoMaster
         }
 
         // Messages from the broker come back to us as publish messages
-        public static int HandlePUBLISH(Socket socket, byte firstByte)
+        private int HandlePUBLISH(Socket socket, byte firstByte)
         {
             int remainingLength = 0;
             int messageID = 0;
@@ -816,7 +768,7 @@ namespace netduinoMaster
         }
 
         // Messages from the broker come back to us as publish messages
-        public static int HandleUNSUBACK(Socket socket, byte firstByte)
+        private int HandleUNSUBACK(Socket socket, byte firstByte)
         {
             int returnCode = 0;
             int messageID = 0;
@@ -830,7 +782,7 @@ namespace netduinoMaster
         }
 
         // Ping response - this should be a total of 2 bytes - that's pretty much all I'm looking for
-        public static int HandlePINGRESP(Socket socket, byte firstByte)
+        private int HandlePINGRESP(Socket socket, byte firstByte)
         {
             int returnCode = 0;
             byte[] buffer = new byte[1];
@@ -841,7 +793,7 @@ namespace netduinoMaster
         }
 
         // Ping Request 
-        public static int HandlePINGREQ(Socket socket, byte firstByte)
+        private int HandlePINGREQ(Socket socket, byte firstByte)
         {
             int returnCode = 0;
             byte[] buffer = new byte[1];
@@ -855,7 +807,7 @@ namespace netduinoMaster
         }
 
         // Connect acknowledgment - returns 3 more bytes, byte 3 should be 0 for success
-        public static int HandleCONNACK(Socket socket, byte firstByte)
+        private int HandleCONNACK(Socket socket, byte firstByte)
         {
             int returnCode = 0;
             byte[] buffer = new byte[3];
@@ -866,7 +818,7 @@ namespace netduinoMaster
         }
 
         // We're not doing QoS 1 yet, so this is just here for flushing 
-        public static int HandlePUBACK(Socket socket, byte firstByte)
+        private int HandlePUBACK(Socket socket, byte firstByte)
         {
             int returnCode = 0;
             int messageID = 0;
@@ -882,5 +834,3 @@ namespace netduinoMaster
         #endregion
     }
 }
-
-
