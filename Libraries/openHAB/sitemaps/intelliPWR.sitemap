@@ -1,0 +1,47 @@
+// ###################################################################
+// ###################################################################
+// ### WRITTEN BY BERK ALTUN AT 08.08.2018 ###########################
+// ###################################################################
+// ###################################################################
+
+sitemap intelliPWR label="intelliPWR" icon="i_pau.png" {
+
+	Switch item=Logical1_Switch 						label="Lamb 1" 							icon="i_light-off.png"
+	Switch item=Logical2_Switch 						label="Lamb 2" 							icon="i_light-off.png"
+	Switch item=Socket_Power_Switch 					label="Socket" 							icon="i_power-off.png"
+
+	// ###################################################################
+	// ### OTHERS ########################################################
+	// ###################################################################
+
+	Frame label="Air Conditioner" visibility=[Aircon_isConnected==ON] {
+		Switch item=Aircon_Switch 						label="Air Conditioner" 				icon="i_air-off.png"
+		Slider item=Aircon_Slider 						label="Speed" 							icon="i_speed.png" 		visibility=[Aircon_Switch==ON] 
+	}
+
+	Frame visibility=[Aircon_isConnected==ON] {
+		Text item=Aircon_Info label="Hardware [%s]" icon="i_info.png"{
+			Text item=Aircon_Brand 						label="Brand [%s]" 						icon="i_info.png"
+			Text item=Aircon_Model 						label="Model [%s]" 						icon="i_info.png"
+			Text item=Aircon_Version 					label="Version [%s]" 					icon="i_info.png"
+		}
+	}
+	
+
+	// ###################################################################
+
+	Frame label="Environment Datas" visibility=[Environment_isConnected==ON] {
+		Text item=Temperature_Text 						label="Temperature [%d °]" 				icon="i_press2.png"
+		Text item=Humidity_Text 						label="humidity [%d RH]" 				icon="i_press2.png"
+		Text item=Smoke_Text 							label="Smoke [%d PPM]" 					icon="i_press2.png"
+		Text item=CarbonMonoxide_Text 					label="Carbon Monoxide [%d CO]" 		icon="i_press2.png"
+	}
+
+	Frame visibility=[Environment_isConnected==ON] {
+		Text item=Environment_Info label="Hardware [%s]" icon="i_info.png"{
+			Text item=Environment_Brand 				label="Brand [%s]" 						icon="i_info.png"
+			Text item=Environment_Model 				label="Model [%s]" 						icon="i_info.png"
+			Text item=Environment_Version 				label="Version [%s]" 					icon="i_info.png"
+		}
+	}
+}

@@ -1,0 +1,15 @@
+// ###################################################################
+// ###################################################################
+// ### WRITTEN BY BERK ALTUN AT 03.05.2018 ###########################
+// ###################################################################
+// ###################################################################
+
+rule "reset_Environment_Power_Switch"
+	when
+		Item Environment_isConnected changed
+	then
+		if(Environment_isConnected.state == OFF)
+			sendNotification("vberkaltun@msn.com","The Environment Device have been safely removed from your device system!")
+		else
+			sendNotification("vberkaltun@msn.com","The Environment Device is connected to your system!")
+	end

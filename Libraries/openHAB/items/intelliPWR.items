@@ -1,0 +1,36 @@
+// ###################################################################
+// ###################################################################
+// ### WRITTEN BY BERK ALTUN AT 08.08.2018 ###########################
+// ###################################################################
+// ###################################################################
+
+Switch Logical1_Switch 						{mqtt=">[mosquitto:/0x50/status:command:ON:1],>[mosquitto:/0x50/status:command:OFF:0],
+												<[mosquitto:/0x50/trigger:command:ON:1],<[mosquitto:/0x50/trigger:command:OFF:0]"}
+Switch Logical2_Switch 						{mqtt=">[mosquitto:/0x51/status:command:ON:1],>[mosquitto:/0x51/status:command:OFF:0],
+												<[mosquitto:/0x51/trigger:command:ON:1],<[mosquitto:/0x51/trigger:command:OFF:0]"}
+
+Switch Socket_Power_Switch 				{mqtt=">[mosquitto:/MasterCore.X1/status:command:ON:1],>[mosquitto:/MasterCore.X1/status:command:OFF:0]"}
+
+// ###################################################################
+
+Switch Aircon_Switch 						{mqtt=">[mosquitto:/0x45/setSpeed:command:ON:1],>[mosquitto:/0x45/setSpeed:command:OFF:0]"}
+Dimmer Aircon_Slider 						{mqtt=">[mosquitto:/0x45/setSpeed:command:*:default]"}
+
+Switch Aircon_isConnected 					{mqtt="<[mosquitto:/0x45/isConnected:command:ON:1],<[mosquitto:/0x45/isConnected:command:OFF:0]"}
+String Aircon_Info 							{mqtt="<[mosquitto:/0x45/version:state:default]"}
+String Aircon_Brand 						{mqtt="<[mosquitto:/0x45/brand:state:default]"}
+String Aircon_Model 						{mqtt="<[mosquitto:/0x45/model:state:default]"}
+String Aircon_Version 						{mqtt="<[mosquitto:/0x45/version:state:default]"}
+
+// ###################################################################
+
+Number Temperature_Text 					{mqtt="<[mosquitto:/0x40/getTemperature:state:default]"}
+Number Humidity_Text 						{mqtt="<[mosquitto:/0x40/getHumidity:state:default]"}
+Number Smoke_Text 							{mqtt="<[mosquitto:/0x40/getSmoke:state:default]"}
+Number CarbonMonoxide_Text 					{mqtt="<[mosquitto:/0x40/getCarbonMonoxide:state:default]"}
+
+Switch Environment_isConnected 				{mqtt="<[mosquitto:/0x40/isConnected:command:ON:1],<[mosquitto:/0x40/isConnected:command:OFF:0]"}
+String Environment_Info 					{mqtt="<[mosquitto:/0x40/version:state:default]"}
+String Environment_Brand 					{mqtt="<[mosquitto:/0x40/brand:state:default]"}
+String Environment_Model 					{mqtt="<[mosquitto:/0x40/model:state:default]"}
+String Environment_Version 					{mqtt="<[mosquitto:/0x40/version:state:default]"}
