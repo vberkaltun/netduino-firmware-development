@@ -20,7 +20,16 @@ namespace netduinoMaster
         static PWM RGBRed = new PWM(PWMChannels.PWM_PIN_D11, 100, 0, true);
         static PWM RGBGreen = new PWM(PWMChannels.PWM_PIN_D10, 100, 0, true);
         static PWM RGBBlue = new PWM(PWMChannels.PWM_PIN_D9, 100, 0, true);
-        static OutputPort SSR = new OutputPort(Pins.ONBOARD_LED, true);
+        static OutputPort SSR = new OutputPort(Pins.GPIO_PIN_D4, true);
+
+        static OutputPort LED11 = new OutputPort(Pins.GPIO_PIN_D3, true);
+        static OutputPort LED22 = new OutputPort(Pins.GPIO_PIN_D6, true);
+        static OutputPort LED1 = new OutputPort(Pins.GPIO_PIN_D7, true);
+        static OutputPort LED2 = new OutputPort(Pins.GPIO_PIN_D2, true);
+        static InputPort Button1 = new InputPort(Pins.GPIO_PIN_D0, false, Port.ResistorMode.PullDown);
+        static InputPort Button2 = new InputPort(Pins.GPIO_PIN_D1, false, Port.ResistorMode.PullDown);
+        static bool[] Status1 = new bool[3];
+        static bool[] Status2 = new bool[3];
 
         static SColorbook ColorBlack = new SColorbook(0, 0, 0, 0, 0, 0);
         static SColorbook ColorWhite = new SColorbook(255, 255, 255, 0, 0, 1);
@@ -52,6 +61,7 @@ namespace netduinoMaster
         static Timer TimerPing = null;
         static Timer TimerScan = null;
         static Timer TimerRGB = null;
+        static Timer TimerLED = null;
 
         #endregion
 
@@ -66,6 +76,9 @@ namespace netduinoMaster
             while (!InitializeNetwork()) ;
             Debug.Print("Waiting for MQTT Configuration...");
             while (!InitializeMQTT()) ;
+
+            // Subscribe all of kernel topics
+            SubscribeKernel();
 
             // Start Pulse-Width Modulation of led operation
             RGBRed.Start();
@@ -85,15 +98,49 @@ namespace netduinoMaster
 
             // Attach functions to lib and after run main lib
             Callback = new TimerCallback(OnCallback);
-            TimerPing = new Timer(Callback, ETimer.Ping, 0, 5000);
             TimerScan = new Timer(Callback, ETimer.Scan, 0, 250);
             TimerRGB = new Timer(Callback, ETimer.RGB, 0, 1000);
+            TimerPing = new Timer(Callback, ETimer.Ping, 0, 2500);
+            TimerLED = new Timer(Callback, ETimer.LED,0, 100);
 
             // Calling the Thread.Sleep method causes the current thread to 
             // Immediately block for the number of milliseconds or the time interval
             // You pass to the method, and yields the remainder of its time 
             // Slice to another thread
             Thread.Sleep(Timeout.Infinite);
+        }
+
+        private static void SubscribeKernel()
+        {
+            // IMPORTANT NOTICE: First of all, we need to subscribe main device
+            // We call it like XXXX/status and this broker is related with SSR
+            // State of device. We will listen something about this and execute it
+            string[] data = { DEVICE_MODEL, "status" };
+            string result = '/' + Serializer.Encode(new char[1] { '/' }, data);
+            NetduinoMQTT.SubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
+
+            NetduinoMQTT.SubscribeMQTT(Socket, new string[] { "/0x50/status" }, new int[] { 0 }, 1);
+            NetduinoMQTT.SubscribeMQTT(Socket, new string[] { "/0x51/status" }, new int[] { 0 }, 1);
+        }
+
+        private static bool OnReceivedKernel(string[] data, string payload)
+        {
+            if (data[0] == DEVICE_MODEL)
+                SSR.Write(payload[0] == '1' ? true : false);
+            else if (data[0] == "0x50")
+            {
+                LED1.Write(payload[0] == '1' ? true : false);
+                LED11.Write(payload[0] == '1' ? true : false);
+            }
+            else if (data[0] == "0x51")
+            {
+                LED2.Write(payload[0] == '1' ? true : false);
+                LED22.Write(payload[0] == '1' ? true : false);
+            }
+            else
+                return false;
+
+            return true;
         }
 
         private static void UnknownEvent()
@@ -186,36 +233,55 @@ namespace netduinoMaster
             }
         }
 
+        private static bool ListenLED(InputPort input, OutputPort output, bool[] status)
+        {
+            status[1] = status[0];
+            status[0] = input.Read();
+
+            if (status[0] != false && status[1] != true)
+            {
+                // will be 1 when pressed (raised high), and 0, when unpressed
+                status[2] = !status[2];
+                output.Write(status[2]);
+
+                // Best case
+                return true;
+            }
+
+            // Worst case
+            return false;
+        }
+
         private static void OnCallback(object state)
         {
             switch ((ETimer)state)
             {
                 case ETimer.Ping:
-                    if (NetduinoMQTT == null)
+                    if (Socket == null || NetduinoMQTT == null)
                         break;
 
-                    lock (NetduinoMQTT)
-                    {
-                        // Our keep alive is 15 seconds - we ping again every 10, So we should live forever
-                        Debug.Print("Pinging <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
-
-                        if (NetduinoMQTT.PingMQTT(Socket) == -1)
+                    lock (Socket) lock (NetduinoMQTT)
                         {
-                            NetduinoMQTT.DisconnectMQTT(Socket);
-                            NetduinoMQTT = null;
+                            // Our keep alive is 15 seconds - we ping again every 10, So we should live forever
+                            Debug.Print("Pinging <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server...");
+
+                            if (NetduinoMQTT.PingMQTT(Socket) == -1)
+                            {
+                                NetduinoMQTT.DisconnectMQTT(Socket);
+                                NetduinoMQTT = null;
+                            }
                         }
-                    }
                     break;
 
                 case ETimer.Scan:
-                    if (I2C == null)
+                    if (I2C == null || Socket == null || NetduinoMQTT == null)
                         break;
 
-                    lock (I2C) lock(NetduinoMQTT)
-                        {
-                            Scanner.ScanSlaves(I2C);
-                            FetchFunction();
-                        }
+                    lock (I2C) lock (Socket) lock (NetduinoMQTT)
+                            {
+                                Scanner.ScanSlaves(I2C);
+                                ReadFunction();
+                            }
 
                     break;
 
@@ -233,6 +299,20 @@ namespace netduinoMaster
                             SetRGBStatus(Notify.Dequeue());
                         }
                     }
+                    break;
+
+                case ETimer.LED:
+                    if (LED1 == null || LED2 == null || Socket == null || NetduinoMQTT == null)
+                        break;
+
+                    lock (LED1) lock (LED2) lock (Socket) lock (NetduinoMQTT)
+                                {
+                                    // Publish last received buffer to MQTT broker
+                                    if (ListenLED(Button1, LED1, Status1))
+                                        NetduinoMQTT.PublishMQTT(Socket, "/0x50/trigger", Status1[2] == true ? "1" : "0");
+                                    if (ListenLED(Button2, LED2, Status2))
+                                        NetduinoMQTT.PublishMQTT(Socket, "/0x51/trigger", Status2[2] == true ? "1" : "0");
+                                }
                     break;
 
                 default:
@@ -350,7 +430,7 @@ namespace netduinoMaster
                 string result = '/' + Serializer.Encode(new char[1] { '/' }, data);
                 NetduinoMQTT.SubscribeMQTT(Socket, new string[] { result }, new int[] { 0 }, 1);
 
-                Debug.Print("Done! MQTT Configuration was established successfully <" + MQTT_PORT + "> port on <" + MQTT_SERVER + "> server.");
+                Debug.Print("Done! MQTT Configuration was established successfully <" + MQTT_PORT + "> port on <XXX.XXX.XXX.XXX>[HIDDEN] server.");
 
                 // Best case
                 return true;
@@ -513,7 +593,46 @@ namespace netduinoMaster
 
         #region I2C
 
-        private static void FetchFunction()
+        private static void WriteFunction(string topic, string payload)
+        {
+            // Print out some debugging info
+            Debug.Print("Done! Callback updated on <" + topic + ">[" + payload + "].");
+
+            // Generate a delimiter data and use in with decoding function
+            string[] data = Serializer.Decode(new char[] { '/', '/' }, topic);
+
+            // Null operator check
+            if (data != null)
+            {
+                // IMPORTANT NOTICE: If we can arrive there, that's mean the payload
+                // Data is consisted of status data. Otherwise, we can say the payload
+                // Data is not consisted of status data. Worst case, Go other state
+                // Of if, that's mean also it is a function data(s)
+                if (!OnReceivedKernel(data,payload))
+                {
+                    // Compare internal data(s) with registered function list
+                    for (ushort index = 0; index < Slave.Length; index++)
+                    {
+                        // Store device name at the here, we can not use it directly
+                        string convertedAddress = "0x" + GenerateHexadecimal(Slave[index].Address);
+
+                        // Check that is it same or not
+                        if (convertedAddress == null)
+                            continue;
+
+                        // Write internal data list to connected device, one-by-one
+                        string result = Serializer.Encode(DATA_DELIMITER, new string[2] { data[1], payload });
+
+                        Write(Slave[index].Address, result);
+
+                        // Not need for stay searching
+                        break;
+                    }
+                }
+            }
+        }
+
+        private static void ReadFunction()
         {
             try
             {
@@ -588,47 +707,6 @@ namespace netduinoMaster
             catch (Exception)
             {
                 UnknownEvent();
-            }
-        }
-
-        private static void WriteFunction(string topic, string payload)
-        {
-            // Print out some debugging info
-            Debug.Print("Done! Callback updated on <" + topic + ">[" + payload + "].");
-
-            // Generate a delimiter data and use in with decoding function
-            string[] data = Serializer.Decode(new char[] { '/', '/' }, topic);
-
-            // Null operator check
-            if (data != null)
-            {
-                // IMPORTANT NOTICE: If we can arrive there, that's mean the payload
-                // Data is consisted of status data. Otherwise, we can say the payload
-                // Data is not consisted of status data. Worst case, Go other state
-                // Of if, that's mean also it is a function data(s)
-                if (data[0] == DEVICE_MODEL)
-                    SSR.Write(payload[0] == '1' ? true : false);
-                else
-                {
-                    // Compare internal data(s) with registered function list
-                    for (ushort index = 0; index < Slave.Length; index++)
-                    {
-                        // Store device name at the here, we can not use it directly
-                        string convertedAddress = "0x" + GenerateHexadecimal(Slave[index].Address);
-
-                        // Check that is it same or not
-                        if (convertedAddress == null)
-                            continue;
-
-                        // Write internal data list to connected device, one-by-one
-                        string result = Serializer.Encode(DATA_DELIMITER, new string[2] { data[1], payload });
-
-                        Write(Slave[index].Address, result);
-
-                        // Not need for stay searching
-                        break;
-                    }
-                }
             }
         }
 
