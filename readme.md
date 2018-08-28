@@ -4,7 +4,8 @@ This repo gives information’s about intelliPWR project.
 You can find all related libraries and codes about intelliPWR from here.  
 More info’s will be added later, stay tuned.
 
-For now, you can find some examples about arduino on example branch. For Netduino side, this branch will be enough for you.
+For now, you can find some examples about arduino on example branch.  
+For Netduino side, this branch will be enough for you.
 
 #### The Socket Pin Orders
 
